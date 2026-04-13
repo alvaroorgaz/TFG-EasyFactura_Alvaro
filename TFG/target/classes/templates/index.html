@@ -1,133 +1,49 @@
 <!DOCTYPE html>
-<html lang="es">
+<html xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>EasyFactura - Facturación Online</title>
+    <title>EasyFactura</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
 </head>
 <body>
 
-<!-- Navbar -->
-<nav class="navbar navbar-expand-lg navbar-dark bg-primary">
-    <div class="container">
-        <a class="navbar-brand" href="#">EasyFactura</a>
-        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-            <span class="navbar-toggler-icon"></span>
-        </button>
-        <div class="collapse navbar-collapse" id="navbarNav">
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+    <div class="container-fluid">
+        <a class="navbar-brand" href="/">EasyFactura</a>
+
+        <div class="collapse navbar-collapse">
             <ul class="navbar-nav ms-auto">
-                <li class="nav-item"><a class="nav-link" href="#features">Características</a></li>
-                <li class="nav-item"><a class="nav-link" href="#pricing">Precios</a></li>
-                <li class="nav-item"><a class="nav-link" href="#contact">Contacto</a></li>
+
+                <li class="nav-item">
+                    <a class="nav-link" th:href="@{/empresa}">Empresas</a>
+                </li>
+
+                <!-- Enlaces futuros -->
+                <li class="nav-item">
+                    <a class="nav-link" href="#">Clientes</a>
+                </li>
+
+                <li class="nav-item">
+                    <a class="nav-link" href="#">Facturas</a>
+                </li>
+
+                <li class="nav-item">
+                    <a class="nav-link" href="#">Productos</a>
+                </li>
+
             </ul>
         </div>
     </div>
 </nav>
 
-<!-- Hero -->
-<section class="bg-light text-center py-5">
-    <div class="container">
-        <h1 class="display-4">Simplifica tu facturación</h1>
-        <p class="lead">Gestiona tus facturas de forma rápida, segura y desde cualquier lugar.</p>
-        <a href="#" class="btn btn-primary btn-lg">Empieza Gratis</a>
-    </div>
-</section>
+<div class="container mt-5 text-center">
+    <h1>Bienvenido a EasyFactura</h1>
+    <p class="lead">Sistema de gestión de facturación sencillo</p>
 
-<!-- Features -->
-<section id="features" class="py-5">
-    <div class="container">
-        <div class="row text-center">
-            <div class="col-md-4">
-                <h3>Fácil de usar</h3>
-                <p>Crea facturas en segundos sin conocimientos técnicos.</p>
-            </div>
-            <div class="col-md-4">
-                <h3>En la nube</h3>
-                <p>Accede a tu información desde cualquier dispositivo.</p>
-            </div>
-            <div class="col-md-4">
-                <h3>Seguridad</h3>
-                <p>Tus datos protegidos con los más altos estándares.</p>
-            </div>
-        </div>
-    </div>
-</section>
+    <a th:href="@{/empresa}" class="btn btn-primary btn-lg mt-3">
+        Gestionar Empresas
+    </a>
+</div>
 
-<!-- Pricing -->
-<section id="pricing" class="bg-light py-5">
-    <div class="container text-center">
-        <h2>Planes</h2>
-        <div class="row mt-4">
-            <div class="col-md-4">
-                <div class="card">
-                    <div class="card-body">
-                        <h5 class="card-title">Gratis</h5>
-                        <p class="card-text">0€/mes</p>
-                        <ul class="list-unstyled">
-                            <li>5 facturas/mes</li>
-                            <li>Soporte básico</li>
-                        </ul>
-                        <a href="#" class="btn btn-outline-primary">Elegir</a>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-4">
-                <div class="card border-primary">
-                    <div class="card-body">
-                        <h5 class="card-title">Pro</h5>
-                        <p class="card-text">9.99€/mes</p>
-                        <ul class="list-unstyled">
-                            <li>Facturas ilimitadas</li>
-                            <li>Soporte prioritario</li>
-                        </ul>
-                        <a href="#" class="btn btn-primary">Elegir</a>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-4">
-                <div class="card">
-                    <div class="card-body">
-                        <h5 class="card-title">Empresa</h5>
-                        <p class="card-text">29.99€/mes</p>
-                        <ul class="list-unstyled">
-                            <li>Todo incluido</li>
-                            <li>Soporte 24/7</li>
-                        </ul>
-                        <a href="#" class="btn btn-outline-primary">Elegir</a>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-</section>
-
-<!-- Contact -->
-<section id="contact" class="py-5">
-    <div class="container">
-        <h2 class="text-center">Contacto</h2>
-        <form class="mt-4">
-            <div class="mb-3">
-                <input type="text" class="form-control" placeholder="Nombre" required>
-            </div>
-            <div class="mb-3">
-                <input type="email" class="form-control" placeholder="Email" required>
-            </div>
-            <div class="mb-3">
-                <textarea class="form-control" rows="4" placeholder="Mensaje"></textarea>
-            </div>
-            <div class="text-center">
-                <button class="btn btn-primary">Enviar</button>
-            </div>
-        </form>
-    </div>
-</section>
-
-<!-- Footer -->
-<footer class="bg-primary text-white text-center py-3">
-    <p class="mb-0">© 2026 EasyFactura. Todos los derechos reservados.</p>
-</footer>
-
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
