@@ -9,7 +9,7 @@ public class Empresa {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long idEmpresa;
+    private Long id_empresa;
 
     @Column(nullable = false, length = 50)
     private String nombre;
@@ -39,12 +39,12 @@ public class Empresa {
     // Getters y setters
 
 
-    public Long getIdEmpresa() {
-        return idEmpresa;
+    public Long getId_empresa() {
+        return id_empresa;
     }
 
-    public void setIdEmpresa(Long idEmpresa) {
-        this.idEmpresa = idEmpresa;
+    public void setId_empresa(Long idEmpresa) {
+        this.id_empresa = idEmpresa;
     }
 
     public String getNombre() {
