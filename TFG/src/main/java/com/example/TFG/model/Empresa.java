@@ -25,7 +25,7 @@ public class Empresa {
 
     private String direccion;
 
-    private Integer telefono;
+    private String telefono;
 
     @OneToMany(mappedBy = "empresa")
     private List<Cliente> clientes;
@@ -87,11 +87,11 @@ public class Empresa {
         this.direccion = direccion;
     }
 
-    public Integer getTelefono() {
+    public String getTelefono() {
         return telefono;
     }
 
-    public void setTelefono(Integer telefono) {
+    public void setTelefono(String telefono) {
         this.telefono = telefono;
     }
 

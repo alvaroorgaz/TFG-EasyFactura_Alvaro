@@ -9,11 +9,11 @@
 
 <div class="container mt-4">
 
-    <h2 th:text="${empresa.id == null} ? 'Nueva Empresa' : 'Editar Empresa'"></h2>
+    <h2 th:text="${empresa.id_empresa == null} ? 'Nueva Empresa' : 'Editar Empresa'"></h2>
 
-    <form th:action="@{/empresa/guardar}" th:object="${empresa}" method="post">
+    <form th:action="@{/empresa}" th:object="${empresa}" method="post">
 
-        <input type="hidden" th:field="*{id}" />
+        <input type="hidden" th:field="*{id_empresa}" />
 
         <div class="mb-3">
             <label class="form-label">Nombre</label>

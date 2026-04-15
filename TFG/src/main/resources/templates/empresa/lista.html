@@ -26,12 +26,12 @@
         </thead>
         <tbody>
         <tr th:each="empresa : ${empresas}">
-            <td th:text="${empresa.id}"></td>
+            <td th:text="${empresa.id_empresa}"></td>
             <td th:text="${empresa.nombre}"></td>
             <td th:text="${empresa.cif}"></td>
             <td>
-                <a th:href="@{/empresa/editar/{id}(id=${empresa.id})}" class="btn btn-warning btn-sm">Editar</a>
-                <a th:href="@{/empresa/eliminar/{id}(id=${empresa.id})}" class="btn btn-danger btn-sm">Eliminar</a>
+                <a th:href="@{/empresa/editar/{id}(id=${empresa.id_empresa})}" class="btn btn-warning btn-sm">Editar</a>
+                <a th:href="@{/empresa/eliminar/{id}(id=${empresa.id_empresa})}" class="btn btn-danger btn-sm">Eliminar</a>
             </td>
         </tr>
         </tbody>
