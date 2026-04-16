@@ -18,9 +18,8 @@
                     <a class="nav-link" th:href="@{/empresa}">Empresas</a>
                 </li>
 
-                <!-- Enlaces futuros -->
                 <li class="nav-item">
-                    <a class="nav-link" href="#">Clientes</a>
+                    <a class="nav-link" th:href="@{/cliente}">Clientes</a>
                 </li>
 
                 <li class="nav-item">
@@ -40,8 +39,12 @@
     <h1>Bienvenido a EasyFactura</h1>
     <p class="lead">Sistema de gestión de facturación sencillo</p>
 
-    <a th:href="@{/empresa}" class="btn btn-primary btn-lg mt-3">
+    <a th:href="@{/empresa}" class="btn btn-primary btn-lg mt-3 me-2">
         Gestionar Empresas
+    </a>
+
+    <a th:href="@{/cliente}" class="btn btn-success btn-lg mt-3">
+        Gestionar Clientes
     </a>
 </div>
 
