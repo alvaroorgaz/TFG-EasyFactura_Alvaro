@@ -5,6 +5,7 @@ import com.example.TFG.service.EmpresaService;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 @Controller
 @RequestMapping("/empresa")
@@ -22,12 +23,19 @@ public class EmpresaController {
     @GetMapping("/crear")
     public String crearEmpresaForm(Model model) {
         model.addAttribute("empresa", new Empresa());
+
         return "empresa/crear";
     }
     @PostMapping
-    public String guardarEmpresa(@ModelAttribute Empresa empresa, Model model) {
+    public String guardarEmpresa(@ModelAttribute Empresa empresa, Model model, RedirectAttributes redirectAttributes) {
         try {
+            boolean nueva = (empresa.getId_empresa() == null);
         empresaService.crearEmpresa(empresa);
+        if (nueva) {
+            redirectAttributes.addFlashAttribute("success", "Empresa creada exitosamente.");
+        } else {
+            redirectAttributes.addFlashAttribute("success", "Empresa actualizada exitosamente.");
+        }
         return "redirect:/empresa";
         } catch (Exception e) {
             if (e.getMessage().contains("Duplicate entry") && e.getMessage().contains("key 'empresa.cif'")){
@@ -48,8 +56,9 @@ public class EmpresaController {
         return "empresa/crear";
     }
     @GetMapping("/eliminar/{id}")
-    public String eliminarEmpresa(@PathVariable Long id) {
+    public String eliminarEmpresa(@PathVariable Long id, RedirectAttributes redirectAttributes) {
         empresaService.eliminarEmpresa(id);
+        redirectAttributes.addFlashAttribute("success", "Empresa eliminada exitosamente.");
         return "redirect:/empresa";
     }
 }
