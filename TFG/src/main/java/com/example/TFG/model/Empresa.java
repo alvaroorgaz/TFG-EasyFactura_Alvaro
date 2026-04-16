@@ -36,6 +36,9 @@ public class Empresa {
     @OneToMany(mappedBy = "empresa")
     private List<Factura> facturas;
 
+    @Enumerated(EnumType.STRING)
+    private Rol rol;
+
     // Getters y setters
 
 
