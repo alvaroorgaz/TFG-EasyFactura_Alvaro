@@ -27,7 +27,7 @@ public class Cliente {
     @Column(columnDefinition = "TEXT")
     private String direccion;
 
-    private Integer telefono;
+    private String telefono;
 
     public Integer getIdCliente() {
         return idCliente;
@@ -77,11 +77,11 @@ public class Cliente {
         this.direccion = direccion;
     }
 
-    public Integer getTelefono() {
+    public String getTelefono() {
         return telefono;
     }
 
-    public void setTelefono(Integer telefono) {
+    public void setTelefono(String telefono) {
         this.telefono = telefono;
     }
 }

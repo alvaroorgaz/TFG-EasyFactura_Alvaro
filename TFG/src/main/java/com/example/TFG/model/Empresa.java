@@ -20,7 +20,7 @@ public class Empresa {
     @Column(nullable = false, unique = true, length = 50)
     private String email;
 
-    @Column(nullable = false, length = 30)
+    @Column(nullable = false, length = 100)
     private String password;
 
     private String direccion;
@@ -38,9 +38,6 @@ public class Empresa {
 
     @Enumerated(EnumType.STRING)
     private Rol rol;
-
-    // Getters y setters
-
 
     public Long getId_empresa() {
         return id_empresa;
@@ -120,5 +117,13 @@ public class Empresa {
 
     public void setFacturas(List<Factura> facturas) {
         this.facturas = facturas;
+    }
+
+    public Rol getRol() {
+        return rol;
+    }
+
+    public void setRol(Rol rol) {
+        this.rol = rol;
     }
 }

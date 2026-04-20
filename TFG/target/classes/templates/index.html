@@ -14,7 +14,7 @@
         <div class="collapse navbar-collapse">
             <ul class="navbar-nav ms-auto">
 
-                <li class="nav-item">
+                <li class="nav-item" th:if="${esAdmin}">
                     <a class="nav-link" th:href="@{/empresa}">Empresas</a>
                 </li>
 
@@ -30,6 +30,10 @@
                     <a class="nav-link" href="/producto">Productos</a>
                 </li>
 
+                <li class="nav-item">
+                    <a class="nav-link" href="/logout">Cerrar Sesión</a>
+                </li>
+
             </ul>
         </div>
     </div>
@@ -39,7 +43,7 @@
     <h1>Bienvenido a EasyFactura</h1>
     <p class="lead">Sistema de gestión de facturación sencillo</p>
 
-    <a th:href="@{/empresa}" class="btn btn-primary btn-lg mt-3 me-2">
+    <a th:if="${esAdmin}" th:href="@{/empresa}" class="btn btn-primary btn-lg mt-3 me-2">
         Gestionar Empresas
     </a>
 
