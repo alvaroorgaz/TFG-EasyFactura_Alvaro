@@ -23,6 +23,10 @@ public class ProductoService {
         return productoRepository.findAll();
     }
 
+    public List<Producto> obtenerProductosPorEmpresa(Long idEmpresa) {
+        return productoRepository.findProductosByEmpresaId(idEmpresa);
+    }
+
     public Producto obtenerProductoPorId(Integer id) {
         return productoRepository.findById(id).orElse(null);
     }

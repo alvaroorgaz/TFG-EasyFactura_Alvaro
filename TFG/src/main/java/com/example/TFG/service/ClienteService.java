@@ -23,6 +23,10 @@ public class ClienteService {
         return clienteRepository.findAll();
     }
 
+    public List<Cliente> obtenerClientesPorEmpresa(Long idEmpresa) {
+        return clienteRepository.findClientesByEmpresaId(idEmpresa);
+    }
+
     public Cliente obtenerClientePorId(Integer id) {
         return clienteRepository.findById(id).orElse(null);
     }

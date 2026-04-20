@@ -4,6 +4,7 @@ import com.example.TFG.model.Empresa;
 import com.example.TFG.model.Producto;
 import com.example.TFG.service.EmpresaService;
 import com.example.TFG.service.ProductoService;
+import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
@@ -22,35 +23,61 @@ public class ProductoController {
     }
 
     @GetMapping
-    public String listaProductos(Model model) {
-        model.addAttribute("productos", productoService.obtenerProductos());
+    public String listaProductos(Model model, Authentication authentication) {
+        Empresa empresaLogueada = obtenerEmpresaLogueada(authentication);
+        boolean esAdmin = esAdmin(authentication);
+
+        if (esAdmin) {
+            model.addAttribute("productos", productoService.obtenerProductos());
+        } else {
+            model.addAttribute("productos", productoService.obtenerProductosPorEmpresa(empresaLogueada.getId_empresa()));
+        }
+
+        model.addAttribute("esAdmin", esAdmin);
         return "producto/lista";
     }
 
     @GetMapping("/crear")
-    public String crearProductoForm(Model model) {
+    public String crearProductoForm(Model model, Authentication authentication) {
+        boolean esAdmin = esAdmin(authentication);
+
         model.addAttribute("producto", new Producto());
-        model.addAttribute("empresas", empresaService.obtenerEmpresas());
+        model.addAttribute("esAdmin", esAdmin);
+
+        if (esAdmin) {
+            model.addAttribute("empresas", empresaService.obtenerEmpresas());
+        }
+
         return "producto/crear";
     }
 
     @PostMapping
     public String guardarProducto(@ModelAttribute Producto producto,
-                                  @RequestParam Long empresaId,
+                                  @RequestParam(required = false) Long empresaId,
+                                  Authentication authentication,
                                   Model model,
                                   RedirectAttributes redirectAttributes) {
         try {
-            Empresa empresa = empresaService.obtenerEmpresaPorId(empresaId);
+            boolean esAdmin = esAdmin(authentication);
+            Empresa empresa;
+
+            if (esAdmin) {
+                empresa = empresaService.obtenerEmpresaPorId(empresaId);
+            } else {
+                empresa = obtenerEmpresaLogueada(authentication);
+            }
 
             if (empresa == null) {
                 model.addAttribute("producto", producto);
-                model.addAttribute("empresas", empresaService.obtenerEmpresas());
+                model.addAttribute("esAdmin", esAdmin);
+                if (esAdmin) {
+                    model.addAttribute("empresas", empresaService.obtenerEmpresas());
+                }
                 model.addAttribute("error", "La empresa seleccionada no existe.");
                 return "producto/crear";
             }
 
             boolean nuevo = (producto.getIdProducto() == null);
-
             producto.setEmpresa(empresa);
             productoService.guardarProducto(producto);
 
@@ -63,8 +90,12 @@ public class ProductoController {
             return "redirect:/producto";
 
         } catch (Exception e) {
+            boolean esAdmin = esAdmin(authentication);
             model.addAttribute("producto", producto);
-            model.addAttribute("empresas", empresaService.obtenerEmpresas());
+            model.addAttribute("esAdmin", esAdmin);
+            if (esAdmin) {
+                model.addAttribute("empresas", empresaService.obtenerEmpresas());
+            }
             model.addAttribute("error", "Error al guardar el producto: " + e.getMessage());
             return "producto/crear";
         }
@@ -72,6 +103,7 @@ public class ProductoController {
 
     @GetMapping("/editar/{id}")
     public String editarProductoForm(@PathVariable Integer id,
+                                     Authentication authentication,
                                      Model model,
                                      RedirectAttributes redirectAttributes) {
         Producto producto = productoService.obtenerProductoPorId(id);
@@ -81,14 +113,43 @@ public class ProductoController {
             return "redirect:/producto";
         }
 
+        boolean esAdmin = esAdmin(authentication);
+        Empresa empresaLogueada = obtenerEmpresaLogueada(authentication);
+
+        if (!esAdmin && !producto.getEmpresa().getId_empresa().equals(empresaLogueada.getId_empresa())) {
+            redirectAttributes.addFlashAttribute("error", "No tienes permiso para editar este producto.");
+            return "redirect:/producto";
+        }
+
         model.addAttribute("producto", producto);
-        model.addAttribute("empresas", empresaService.obtenerEmpresas());
+        model.addAttribute("esAdmin", esAdmin);
+
+        if (esAdmin) {
+            model.addAttribute("empresas", empresaService.obtenerEmpresas());
+        }
+
         return "producto/crear";
     }
 
     @GetMapping("/eliminar/{id}")
     public String eliminarProducto(@PathVariable Integer id,
+                                   Authentication authentication,
                                    RedirectAttributes redirectAttributes) {
+        Producto producto = productoService.obtenerProductoPorId(id);
+
+        if (producto == null) {
+            redirectAttributes.addFlashAttribute("error", "Producto no encontrado.");
+            return "redirect:/producto";
+        }
+
+        boolean esAdmin = esAdmin(authentication);
+        Empresa empresaLogueada = obtenerEmpresaLogueada(authentication);
+
+        if (!esAdmin && !producto.getEmpresa().getId_empresa().equals(empresaLogueada.getId_empresa())) {
+            redirectAttributes.addFlashAttribute("error", "No tienes permiso para eliminar este producto.");
+            return "redirect:/producto";
+        }
+
         try {
             productoService.eliminarProducto(id);
             redirectAttributes.addFlashAttribute("success", "Producto eliminado exitosamente.");
@@ -97,5 +158,22 @@ public class ProductoController {
         }
 
         return "redirect:/producto";
+    }
+
+    private boolean esAdmin(Authentication authentication) {
+        return authentication != null
+                && authentication.getAuthorities().stream()
+                .anyMatch(auth -> auth.getAuthority().equals("ROLE_ADMIN"));
+    }
+
+    private Empresa obtenerEmpresaLogueada(Authentication authentication) {
+        if (authentication == null) {
+            return null;
+        }
+
+        return empresaService.obtenerEmpresas().stream()
+                .filter(e -> e.getEmail().equals(authentication.getName()))
+                .findFirst()
+                .orElse(null);
     }
 }
