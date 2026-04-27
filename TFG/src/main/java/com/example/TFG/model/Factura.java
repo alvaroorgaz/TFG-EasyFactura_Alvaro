@@ -10,7 +10,7 @@ public class Factura {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Integer idFactura;
+    private Long idFactura;
 
     @ManyToOne
     @JoinColumn(name = "id_empresa", nullable = false)
@@ -24,6 +24,62 @@ public class Factura {
 
     @Enumerated(EnumType.STRING)
     private EstadoFactura estado;
+
+    public Long getIdFactura() {
+        return idFactura;
+    }
+
+    public void setIdFactura(Long idFactura) {
+        this.idFactura = idFactura;
+    }
+
+    public Empresa getEmpresa() {
+        return empresa;
+    }
+
+    public void setEmpresa(Empresa empresa) {
+        this.empresa = empresa;
+    }
+
+    public Cliente getCliente() {
+        return cliente;
+    }
+
+    public void setCliente(Cliente cliente) {
+        this.cliente = cliente;
+    }
+
+    public LocalDateTime getFecha() {
+        return fecha;
+    }
+
+    public void setFecha(LocalDateTime fecha) {
+        this.fecha = fecha;
+    }
+
+    public EstadoFactura getEstado() {
+        return estado;
+    }
+
+    public void setEstado(EstadoFactura estado) {
+        this.estado = estado;
+    }
+
+    public String getHashVerifactu() {
+        return hashVerifactu;
+    }
+
+    public void setHashVerifactu(String hashVerifactu) {
+        this.hashVerifactu = hashVerifactu;
+    }
+
+    public List<FacturaDetalle> getDetalles() {
+        return detalles;
+    }
+
+    public void setDetalles(List<FacturaDetalle> detalles) {
+        this.detalles = detalles;
+    }
 
     @Column(nullable = false)
     private String hashVerifactu;
