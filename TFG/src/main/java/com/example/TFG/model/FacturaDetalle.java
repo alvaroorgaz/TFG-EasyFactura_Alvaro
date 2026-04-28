@@ -1,6 +1,7 @@
 package com.example.TFG.model;
 
 import jakarta.persistence.*;
+
 import java.math.BigDecimal;
 
 @Entity
@@ -9,6 +10,7 @@ public class FacturaDetalle {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id_detalle")
     private Integer idDetalle;
 
     @ManyToOne
@@ -22,14 +24,68 @@ public class FacturaDetalle {
     @Column(nullable = false)
     private Integer cantidad;
 
-    @Column(nullable = false)
+    @Column(name = "precio_unitario", nullable = false, precision = 10, scale = 2)
     private BigDecimal precioUnitario;
 
     @Column(nullable = false)
     private Integer iva;
 
-    @Column(nullable = false)
+    @Column(nullable = false, precision = 10, scale = 2)
     private BigDecimal total;
 
-    // Getters y setters
+    public Integer getIdDetalle() {
+        return idDetalle;
+    }
+
+    public void setIdDetalle(Integer idDetalle) {
+        this.idDetalle = idDetalle;
+    }
+
+    public Factura getFactura() {
+        return factura;
+    }
+
+    public void setFactura(Factura factura) {
+        this.factura = factura;
+    }
+
+    public Producto getProducto() {
+        return producto;
+    }
+
+    public void setProducto(Producto producto) {
+        this.producto = producto;
+    }
+
+    public Integer getCantidad() {
+        return cantidad;
+    }
+
+    public void setCantidad(Integer cantidad) {
+        this.cantidad = cantidad;
+    }
+
+    public BigDecimal getPrecioUnitario() {
+        return precioUnitario;
+    }
+
+    public void setPrecioUnitario(BigDecimal precioUnitario) {
+        this.precioUnitario = precioUnitario;
+    }
+
+    public Integer getIva() {
+        return iva;
+    }
+
+    public void setIva(Integer iva) {
+        this.iva = iva;
+    }
+
+    public BigDecimal getTotal() {
+        return total;
+    }
+
+    public void setTotal(BigDecimal total) {
+        this.total = total;
+    }
 }

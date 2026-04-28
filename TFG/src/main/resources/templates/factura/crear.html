@@ -9,31 +9,30 @@
 
 <div class="container mt-4">
 
-    <h2 th:text="${factura.idFactura == null} ? 'Nueva Factura' : 'Editar Factura'"></h2>
+    <h2 th:text="${facturaForm.idFactura == null} ? 'Nueva Factura' : 'Editar Factura'"></h2>
 
-    <form th:action="@{/factura}" th:object="${factura}" method="post">
+    <form th:action="@{/factura}" th:object="${facturaForm}" method="post" id="facturaForm">
         <input type="hidden" th:field="*{idFactura}" />
 
         <div class="mb-3" th:if="${esAdmin}">
             <label class="form-label">Empresa</label>
-            <select class="form-select" name="empresaId" required>
+            <select class="form-select" th:field="*{empresaId}" id="empresaSelect" required>
                 <option value="">Selecciona una empresa</option>
                 <option th:each="empresaItem : ${empresas}"
                         th:value="${empresaItem.id_empresa}"
-                        th:text="${empresaItem.nombre}"
-                        th:selected="${factura.empresa != null and factura.empresa.id_empresa == empresaItem.id_empresa}">
+                        th:text="${empresaItem.nombre}">
                 </option>
             </select>
         </div>
 
         <div class="mb-3">
             <label class="form-label">Cliente</label>
-            <select class="form-select" name="clienteId" required>
+            <select class="form-select" th:field="*{clienteId}" id="clienteSelect" required>
                 <option value="">Selecciona un cliente</option>
                 <option th:each="clienteItem : ${clientes}"
                         th:value="${clienteItem.idCliente}"
                         th:text="${clienteItem.nombre}"
-                        th:selected="${factura.cliente != null and factura.cliente.idCliente == clienteItem.idCliente}">
+                        th:attr="data-empresa-id=${clienteItem.empresa.id_empresa}">
                 </option>
             </select>
         </div>
@@ -51,7 +50,68 @@
 
         <div class="mb-3">
             <label class="form-label">Hash VeriFactu</label>
-            <input type="text" class="form-control" th:field="*{hashVerifactu}" maxlength="150" required>
+            <input type="text" class="form-control" th:field="*{hashVerifactu}" maxlength="150">
+        </div>
+
+        <h4 class="mt-4">Lineas de factura</h4>
+
+        <div class="table-responsive">
+            <table class="table table-bordered" id="tablaDetalles">
+                <thead>
+                <tr>
+                    <th>Producto</th>
+                    <th>Precio unitario</th>
+                    <th>IVA</th>
+                    <th>Cantidad</th>
+                    <th>Total linea</th>
+                    <th>Accion</th>
+                </tr>
+                </thead>
+                <tbody id="detalleBody">
+                <tr th:each="detalle, stat : *{detalles}" class="detalle-row">
+                    <td>
+                        <select class="form-select producto-select"
+                                th:name="|detalles[${stat.index}].productoId|"
+                                required>
+                            <option value="">Selecciona un producto</option>
+                            <option th:each="productoItem : ${productos}"
+                                    th:value="${productoItem.idProducto}"
+                                    th:text="${productoItem.nombre}"
+                                    th:selected="${detalle.productoId != null and detalle.productoId == productoItem.idProducto}"
+                                    th:attr="data-precio=${productoItem.precio},data-iva=${productoItem.iva},data-empresa-id=${productoItem.empresa.id_empresa}">
+                            </option>
+                        </select>
+                    </td>
+                    <td>
+                        <input type="text" class="form-control precio-linea" readonly>
+                    </td>
+                    <td>
+                        <input type="text" class="form-control iva-linea" readonly>
+                    </td>
+                    <td>
+                        <input type="number"
+                               class="form-control cantidad-input"
+                               min="1"
+                               th:name="|detalles[${stat.index}].cantidad|"
+                               th:value="${detalle.cantidad}"
+                               required>
+                    </td>
+                    <td>
+                        <input type="text" class="form-control total-linea" readonly>
+                    </td>
+                    <td>
+                        <button type="button" class="btn btn-danger btn-sm eliminar-linea">Quitar</button>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <button type="button" class="btn btn-outline-primary mb-3" id="agregarLinea">Anadir linea</button>
+
+        <div class="mb-3">
+            <label class="form-label fw-bold">Total factura</label>
+            <input type="text" class="form-control" id="totalFactura" readonly>
         </div>
 
         <button type="submit" class="btn btn-primary">Guardar</button>
@@ -88,6 +148,201 @@
 
         if (errorToast) {
             new bootstrap.Toast(errorToast).show();
+        }
+
+        const empresaSelect = document.getElementById("empresaSelect");
+        const clienteSelect = document.getElementById("clienteSelect");
+        const detalleBody = document.getElementById("detalleBody");
+        const agregarLineaBtn = document.getElementById("agregarLinea");
+        const totalFacturaInput = document.getElementById("totalFactura");
+        const primerSelectProducto = document.querySelector(".producto-select");
+        const opcionesProductosHtml = primerSelectProducto ? primerSelectProducto.innerHTML : '<option value="">Selecciona un producto</option>';
+
+        function filtrarClientesPorEmpresa() {
+            if (!empresaSelect) return;
+
+            const empresaId = empresaSelect.value;
+
+            Array.from(clienteSelect.options).forEach(option => {
+                if (option.value === "") {
+                    option.hidden = false;
+                    return;
+                }
+
+                const empresaOption = option.getAttribute("data-empresa-id");
+                option.hidden = empresaOption !== empresaId;
+            });
+
+            if (clienteSelect.selectedOptions.length > 0) {
+                const selected = clienteSelect.selectedOptions[0];
+                if (selected.value !== "" && selected.hidden) {
+                    clienteSelect.value = "";
+                }
+            }
+        }
+
+        function filtrarProductosPorEmpresaEnFila(row) {
+            const select = row.querySelector(".producto-select");
+            if (!select) return;
+
+            let empresaId = null;
+
+            if (empresaSelect) {
+                empresaId = empresaSelect.value;
+            } else {
+                const selectedCliente = clienteSelect.selectedOptions[0];
+                if (selectedCliente) {
+                    empresaId = selectedCliente.getAttribute("data-empresa-id");
+                }
+            }
+
+            Array.from(select.options).forEach(option => {
+                if (option.value === "") {
+                    option.hidden = false;
+                    return;
+                }
+
+                const empresaOption = option.getAttribute("data-empresa-id");
+                option.hidden = empresaId && empresaOption !== empresaId;
+            });
+
+            const selected = select.selectedOptions[0];
+            if (selected && selected.value !== "" && selected.hidden) {
+                select.value = "";
+            }
+        }
+
+        function recalcularFila(row) {
+            const productoSelect = row.querySelector(".producto-select");
+            const cantidadInput = row.querySelector(".cantidad-input");
+            const precioInput = row.querySelector(".precio-linea");
+            const ivaInput = row.querySelector(".iva-linea");
+            const totalInput = row.querySelector(".total-linea");
+
+            const selectedOption = productoSelect.selectedOptions[0];
+
+            if (!selectedOption || selectedOption.value === "") {
+                precioInput.value = "";
+                ivaInput.value = "";
+                totalInput.value = "";
+                recalcularTotalFactura();
+                return;
+            }
+
+            const precio = parseFloat(selectedOption.getAttribute("data-precio") || "0");
+            const iva = parseFloat(selectedOption.getAttribute("data-iva") || "0");
+            const cantidad = parseInt(cantidadInput.value || "0");
+
+            const base = precio * cantidad;
+            const total = base + (base * iva / 100);
+
+            precioInput.value = precio.toFixed(2);
+            ivaInput.value = iva.toFixed(0) + "%";
+            totalInput.value = isNaN(total) ? "" : total.toFixed(2);
+
+            recalcularTotalFactura();
+        }
+
+        function recalcularTotalFactura() {
+            let total = 0;
+
+            document.querySelectorAll(".total-linea").forEach(input => {
+                const valor = parseFloat(input.value || "0");
+                if (!isNaN(valor)) {
+                    total += valor;
+                }
+            });
+
+            totalFacturaInput.value = total.toFixed(2);
+        }
+
+        function reindexarFilas() {
+            const rows = detalleBody.querySelectorAll(".detalle-row");
+
+            rows.forEach((row, index) => {
+                const productoSelect = row.querySelector(".producto-select");
+                const cantidadInput = row.querySelector(".cantidad-input");
+
+                productoSelect.name = `detalles[${index}].productoId`;
+                cantidadInput.name = `detalles[${index}].cantidad`;
+            });
+        }
+
+        function crearFilaNueva() {
+            const index = detalleBody.querySelectorAll(".detalle-row").length;
+
+            const row = document.createElement("tr");
+            row.classList.add("detalle-row");
+
+            row.innerHTML = `
+                <td>
+                    <select class="form-select producto-select" name="detalles[${index}].productoId" required>
+                        <option value="">Selecciona un producto</option>
+                        ${generarOpcionesProductos()}
+                    </select>
+                </td>
+                <td>
+                    <input type="text" class="form-control precio-linea" readonly>
+                </td>
+                <td>
+                    <input type="text" class="form-control iva-linea" readonly>
+                </td>
+                <td>
+                    <input type="number" class="form-control cantidad-input" name="detalles[${index}].cantidad" min="1" value="1" required>
+                </td>
+                <td>
+                    <input type="text" class="form-control total-linea" readonly>
+                </td>
+                <td>
+                    <button type="button" class="btn btn-danger btn-sm eliminar-linea">Quitar</button>
+                </td>
+            `;
+
+            detalleBody.appendChild(row);
+            inicializarFila(row);
+        }
+
+        function generarOpcionesProductos() {
+            return opcionesProductosHtml;
+        }
+
+        function inicializarFila(row) {
+            filtrarProductosPorEmpresaEnFila(row);
+
+            const productoSelect = row.querySelector(".producto-select");
+            const cantidadInput = row.querySelector(".cantidad-input");
+            const eliminarBtn = row.querySelector(".eliminar-linea");
+
+            productoSelect.addEventListener("change", () => recalcularFila(row));
+            cantidadInput.addEventListener("input", () => recalcularFila(row));
+
+            eliminarBtn.addEventListener("click", function () {
+                if (detalleBody.querySelectorAll(".detalle-row").length > 1) {
+                    row.remove();
+                    reindexarFilas();
+                    recalcularTotalFactura();
+                }
+            });
+
+            recalcularFila(row);
+        }
+
+        document.querySelectorAll(".detalle-row").forEach(inicializarFila);
+
+        agregarLineaBtn.addEventListener("click", function () {
+            crearFilaNueva();
+        });
+
+        if (empresaSelect) {
+            empresaSelect.addEventListener("change", function () {
+                filtrarClientesPorEmpresa();
+                document.querySelectorAll(".detalle-row").forEach(row => {
+                    filtrarProductosPorEmpresaEnFila(row);
+                    recalcularFila(row);
+                });
+            });
+
+            filtrarClientesPorEmpresa();
         }
     });
 </script>

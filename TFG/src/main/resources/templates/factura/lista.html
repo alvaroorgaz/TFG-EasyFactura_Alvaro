@@ -23,6 +23,7 @@
             <th>Cliente</th>
             <th>Fecha</th>
             <th>Estado</th>
+            <th>Total</th>
             <th>Hash VeriFactu</th>
             <th>Acciones</th>
         </tr>
@@ -34,6 +35,7 @@
             <td th:text="${factura.cliente.nombre}"></td>
             <td th:text="${factura.fecha}"></td>
             <td th:text="${factura.estado}"></td>
+            <td th:text="${totalesFacturas[factura.idFactura]}"></td>
             <td th:text="${factura.hashVerifactu}"></td>
             <td>
                 <a th:href="@{/factura/editar/{id}(id=${factura.idFactura})}" class="btn btn-warning btn-sm">Editar</a>
@@ -42,6 +44,10 @@
         </tr>
         </tbody>
     </table>
+
+    <div class="alert alert-info mt-3">
+        Las facturas pueden mostrar error al eliminarse porque en la base de datos existe un trigger que bloquea su borrado fisico por control de VeriFactu.
+    </div>
 
     <a th:href="@{/}" class="btn btn-secondary">Volver</a>
 </div>

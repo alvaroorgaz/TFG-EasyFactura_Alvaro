@@ -1,6 +1,7 @@
 package com.example.TFG.model;
 
 import jakarta.persistence.*;
+
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -10,7 +11,8 @@ public class Factura {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long idFactura;
+    @Column(name = "id_factura")
+    private Integer idFactura;
 
     @ManyToOne
     @JoinColumn(name = "id_empresa", nullable = false)
@@ -25,11 +27,17 @@ public class Factura {
     @Enumerated(EnumType.STRING)
     private EstadoFactura estado;
 
-    public Long getIdFactura() {
+    @Column(name = "hash_verifactu", nullable = false, length = 150)
+    private String hashVerifactu;
+
+    @OneToMany(mappedBy = "factura")
+    private List<FacturaDetalle> detalles;
+
+    public Integer getIdFactura() {
         return idFactura;
     }
 
-    public void setIdFactura(Long idFactura) {
+    public void setIdFactura(Integer idFactura) {
         this.idFactura = idFactura;
     }
 
@@ -80,12 +88,4 @@ public class Factura {
     public void setDetalles(List<FacturaDetalle> detalles) {
         this.detalles = detalles;
     }
-
-    @Column(nullable = false)
-    private String hashVerifactu;
-
-    @OneToMany(mappedBy = "factura")
-    private List<FacturaDetalle> detalles;
-
-    // Getters y setters
 }

@@ -1,17 +1,28 @@
 package com.example.TFG.controller;
 
-import com.example.TFG.model.Cliente;
+import com.example.TFG.dto.FacturaDetalleForm;
+import com.example.TFG.dto.FacturaForm;
 import com.example.TFG.model.Empresa;
 import com.example.TFG.model.EstadoFactura;
 import com.example.TFG.model.Factura;
 import com.example.TFG.service.ClienteService;
 import com.example.TFG.service.EmpresaService;
 import com.example.TFG.service.FacturaService;
+import com.example.TFG.service.ProductoService;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+
+import java.math.BigDecimal;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 @Controller
 @RequestMapping("/factura")
@@ -20,13 +31,16 @@ public class FacturaController {
     private final FacturaService facturaService;
     private final EmpresaService empresaService;
     private final ClienteService clienteService;
+    private final ProductoService productoService;
 
     public FacturaController(FacturaService facturaService,
                              EmpresaService empresaService,
-                             ClienteService clienteService) {
+                             ClienteService clienteService,
+                             ProductoService productoService) {
         this.facturaService = facturaService;
         this.empresaService = empresaService;
         this.clienteService = clienteService;
+        this.productoService = productoService;
     }
 
     @GetMapping
@@ -34,80 +48,37 @@ public class FacturaController {
         Empresa empresaLogueada = obtenerEmpresaLogueada(authentication);
         boolean esAdmin = esAdmin(authentication);
 
-        if (esAdmin) {
-            model.addAttribute("facturas", facturaService.obtenerFacturas());
-        } else {
-            model.addAttribute("facturas", facturaService.obtenerFacturasPorEmpresa(empresaLogueada.getId_empresa()));
+        List<Factura> facturas = facturaService.obtenerFacturas(esAdmin, empresaLogueada);
+        Map<Integer, BigDecimal> totalesFacturas = new HashMap<>();
+
+        for (Factura factura : facturas) {
+            totalesFacturas.put(factura.getIdFactura(), facturaService.calcularTotalFactura(factura.getIdFactura()));
         }
 
+        model.addAttribute("facturas", facturas);
+        model.addAttribute("totalesFacturas", totalesFacturas);
         model.addAttribute("esAdmin", esAdmin);
         return "factura/lista";
     }
 
     @GetMapping("/crear")
     public String crearFacturaForm(Model model, Authentication authentication) {
-        boolean esAdmin = esAdmin(authentication);
+        FacturaForm facturaForm = new FacturaForm();
+        facturaForm.getDetalles().add(new FacturaDetalleForm());
 
-        model.addAttribute("factura", new Factura());
-        model.addAttribute("estados", EstadoFactura.values());
-        model.addAttribute("esAdmin", esAdmin);
-
-        if (esAdmin) {
-            model.addAttribute("empresas", empresaService.obtenerEmpresas());
-            model.addAttribute("clientes", clienteService.obtenerClientes());
-        } else {
-            Empresa empresaLogueada = obtenerEmpresaLogueada(authentication);
-            model.addAttribute("clientes", clienteService.obtenerClientesPorEmpresa(empresaLogueada.getId_empresa()));
-        }
-
+        cargarDatosFormulario(model, facturaForm, authentication, null);
         return "factura/crear";
     }
 
     @PostMapping
-    public String guardarFactura(@ModelAttribute Factura factura,
-                                 @RequestParam Integer clienteId,
-                                 @RequestParam(required = false) Long empresaId,
+    public String guardarFactura(@ModelAttribute("facturaForm") FacturaForm facturaForm,
                                  Authentication authentication,
                                  Model model,
                                  RedirectAttributes redirectAttributes) {
         try {
-            boolean esAdmin = esAdmin(authentication);
-            Empresa empresa;
-            Cliente cliente = clienteService.obtenerClientePorId(clienteId);
+            facturaService.guardarFactura(facturaForm, esAdmin(authentication), obtenerEmpresaLogueada(authentication));
 
-            if (esAdmin) {
-                empresa = empresaService.obtenerEmpresaPorId(empresaId);
-            } else {
-                empresa = obtenerEmpresaLogueada(authentication);
-            }
-
-            if (empresa == null) {
-                cargarDatosFormulario(model, factura, authentication, "La empresa seleccionada no existe.");
-                return "factura/crear";
-            }
-
-            if (cliente == null) {
-                cargarDatosFormulario(model, factura, authentication, "El cliente seleccionado no existe.");
-                return "factura/crear";
-            }
-
-            if (!cliente.getEmpresa().getId_empresa().equals(empresa.getId_empresa())) {
-                cargarDatosFormulario(model, factura, authentication, "El cliente no pertenece a la empresa seleccionada.");
-                return "factura/crear";
-            }
-
-            boolean nueva = (factura.getIdFactura() == null);
-
-            factura.setEmpresa(empresa);
-            factura.setCliente(cliente);
-
-            if (factura.getEstado() == null) {
-                factura.setEstado(EstadoFactura.activa);
-            }
-
-            facturaService.guardarFactura(factura);
-
-            if (nueva) {
+            if (facturaForm.getIdFactura() == null) {
                 redirectAttributes.addFlashAttribute("success", "Factura creada exitosamente.");
             } else {
                 redirectAttributes.addFlashAttribute("success", "Factura actualizada exitosamente.");
@@ -116,13 +87,16 @@ public class FacturaController {
             return "redirect:/factura";
 
         } catch (Exception e) {
-            cargarDatosFormulario(model, factura, authentication, "Error al guardar la factura: " + e.getMessage());
+            if (facturaForm.getDetalles() == null || facturaForm.getDetalles().isEmpty()) {
+                facturaForm.getDetalles().add(new FacturaDetalleForm());
+            }
+            cargarDatosFormulario(model, facturaForm, authentication, "Error al guardar la factura: " + e.getMessage());
             return "factura/crear";
         }
     }
 
     @GetMapping("/editar/{id}")
-    public String editarFacturaForm(@PathVariable Long id,
+    public String editarFacturaForm(@PathVariable Integer id,
                                     Authentication authentication,
                                     Model model,
                                     RedirectAttributes redirectAttributes) {
@@ -141,22 +115,17 @@ public class FacturaController {
             return "redirect:/factura";
         }
 
-        model.addAttribute("factura", factura);
-        model.addAttribute("estados", EstadoFactura.values());
-        model.addAttribute("esAdmin", esAdmin);
-
-        if (esAdmin) {
-            model.addAttribute("empresas", empresaService.obtenerEmpresas());
-            model.addAttribute("clientes", clienteService.obtenerClientes());
-        } else {
-            model.addAttribute("clientes", clienteService.obtenerClientesPorEmpresa(empresaLogueada.getId_empresa()));
+        FacturaForm facturaForm = facturaService.crearFormularioDesdeFactura(factura);
+        if (facturaForm.getDetalles().isEmpty()) {
+            facturaForm.getDetalles().add(new FacturaDetalleForm());
         }
 
+        cargarDatosFormulario(model, facturaForm, authentication, null);
         return "factura/crear";
     }
 
     @GetMapping("/eliminar/{id}")
-    public String eliminarFactura(@PathVariable Long id,
+    public String eliminarFactura(@PathVariable Integer id,
                                   Authentication authentication,
                                   RedirectAttributes redirectAttributes) {
         Factura factura = facturaService.obtenerFacturaPorId(id);
@@ -185,22 +154,27 @@ public class FacturaController {
     }
 
     private void cargarDatosFormulario(Model model,
-                                       Factura factura,
+                                       FacturaForm facturaForm,
                                        Authentication authentication,
                                        String error) {
         boolean esAdmin = esAdmin(authentication);
+        Empresa empresaLogueada = obtenerEmpresaLogueada(authentication);
 
-        model.addAttribute("factura", factura);
+        model.addAttribute("facturaForm", facturaForm);
         model.addAttribute("estados", EstadoFactura.values());
         model.addAttribute("esAdmin", esAdmin);
-        model.addAttribute("error", error);
 
         if (esAdmin) {
             model.addAttribute("empresas", empresaService.obtenerEmpresas());
             model.addAttribute("clientes", clienteService.obtenerClientes());
+            model.addAttribute("productos", productoService.obtenerProductos());
         } else {
-            Empresa empresaLogueada = obtenerEmpresaLogueada(authentication);
             model.addAttribute("clientes", clienteService.obtenerClientesPorEmpresa(empresaLogueada.getId_empresa()));
+            model.addAttribute("productos", productoService.obtenerProductosPorEmpresa(empresaLogueada.getId_empresa()));
+        }
+
+        if (error != null) {
+            model.addAttribute("error", error);
         }
     }
 
