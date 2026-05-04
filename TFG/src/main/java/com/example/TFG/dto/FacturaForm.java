@@ -8,10 +8,12 @@ import java.util.List;
 public class FacturaForm {
 
     private Integer idFactura;
+    private Integer facturaOriginalId;
     private Long empresaId;
     private Integer clienteId;
     private EstadoFactura estado;
     private String hashVerifactu;
+    private String motivoRectificacion;
     private List<FacturaDetalleForm> detalles = new ArrayList<>();
 
     public Integer getIdFactura() {
@@ -20,6 +22,14 @@ public class FacturaForm {
 
     public void setIdFactura(Integer idFactura) {
         this.idFactura = idFactura;
+    }
+
+    public Integer getFacturaOriginalId() {
+        return facturaOriginalId;
+    }
+
+    public void setFacturaOriginalId(Integer facturaOriginalId) {
+        this.facturaOriginalId = facturaOriginalId;
     }
 
     public Long getEmpresaId() {
@@ -52,6 +62,14 @@ public class FacturaForm {
 
     public void setHashVerifactu(String hashVerifactu) {
         this.hashVerifactu = hashVerifactu;
+    }
+
+    public String getMotivoRectificacion() {
+        return motivoRectificacion;
+    }
+
+    public void setMotivoRectificacion(String motivoRectificacion) {
+        this.motivoRectificacion = motivoRectificacion;
     }
 
     public List<FacturaDetalleForm> getDetalles() {

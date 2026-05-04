@@ -1,6 +1,7 @@
 package com.example.TFG.model;
 
 import jakarta.persistence.*;
+
 import java.time.LocalDateTime;
 
 @Entity
@@ -9,6 +10,7 @@ public class FacturaRectificada {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id_rectificacion")
     private Integer idRectificacion;
 
     @ManyToOne
@@ -19,9 +21,48 @@ public class FacturaRectificada {
     @JoinColumn(name = "id_factura_rectificada", nullable = false)
     private Factura facturaRectificada;
 
+    @Column(columnDefinition = "TEXT")
     private String motivo;
 
     private LocalDateTime fecha;
 
-    // Getters y setters
+    public Integer getIdRectificacion() {
+        return idRectificacion;
+    }
+
+    public void setIdRectificacion(Integer idRectificacion) {
+        this.idRectificacion = idRectificacion;
+    }
+
+    public Factura getFacturaOriginal() {
+        return facturaOriginal;
+    }
+
+    public void setFacturaOriginal(Factura facturaOriginal) {
+        this.facturaOriginal = facturaOriginal;
+    }
+
+    public Factura getFacturaRectificada() {
+        return facturaRectificada;
+    }
+
+    public void setFacturaRectificada(Factura facturaRectificada) {
+        this.facturaRectificada = facturaRectificada;
+    }
+
+    public String getMotivo() {
+        return motivo;
+    }
+
+    public void setMotivo(String motivo) {
+        this.motivo = motivo;
+    }
+
+    public LocalDateTime getFecha() {
+        return fecha;
+    }
+
+    public void setFecha(LocalDateTime fecha) {
+        this.fecha = fecha;
+    }
 }

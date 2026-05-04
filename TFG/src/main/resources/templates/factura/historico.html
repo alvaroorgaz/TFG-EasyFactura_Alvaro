@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Historico de Factura</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+
+<div class="container mt-4">
+
+    <h2>Historico de la Factura</h2>
+
+    <div class="card mb-4">
+        <div class="card-header">
+            Factura original
+        </div>
+        <div class="card-body">
+            <p><strong>ID:</strong> <span th:text="${facturaOriginal.idFactura}"></span></p>
+            <p><strong>Empresa:</strong> <span th:text="${facturaOriginal.empresa.nombre}"></span></p>
+            <p><strong>Cliente:</strong> <span th:text="${facturaOriginal.cliente.nombre}"></span></p>
+            <p><strong>Fecha:</strong> <span th:text="${facturaOriginal.fecha}"></span></p>
+            <p><strong>Estado:</strong> <span th:text="${facturaOriginal.estado}"></span></p>
+            <p><strong>Total:</strong> <span th:text="${totalFacturaOriginal}"></span></p>
+            <p><strong>Hash VeriFactu:</strong> <span th:text="${facturaOriginal.hashVerifactu}"></span></p>
+        </div>
+    </div>
+
+    <div class="card mb-4">
+        <div class="card-header">
+            Factura consultada
+        </div>
+        <div class="card-body">
+            <p><strong>ID:</strong> <span th:text="${facturaActual.idFactura}"></span></p>
+            <p><strong>Empresa:</strong> <span th:text="${facturaActual.empresa.nombre}"></span></p>
+            <p><strong>Cliente:</strong> <span th:text="${facturaActual.cliente.nombre}"></span></p>
+            <p><strong>Fecha:</strong> <span th:text="${facturaActual.fecha}"></span></p>
+            <p><strong>Estado:</strong> <span th:text="${facturaActual.estado}"></span></p>
+            <p><strong>Hash VeriFactu:</strong> <span th:text="${facturaActual.hashVerifactu}"></span></p>
+        </div>
+    </div>
+
+    <h4>Modificaciones registradas</h4>
+
+    <div class="alert alert-info" th:if="${#lists.isEmpty(historico)}">
+        Esta factura original no tiene rectificaciones registradas.
+    </div>
+
+    <table class="table table-striped" th:if="${!#lists.isEmpty(historico)}">
+        <thead>
+        <tr>
+            <th>ID rectificacion</th>
+            <th>Factura original</th>
+            <th>Factura nueva version</th>
+            <th>Fecha</th>
+            <th>Motivo</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr th:each="item : ${historico}">
+            <td th:text="${item.idRectificacion}"></td>
+            <td th:text="${item.facturaOriginal.idFactura}"></td>
+            <td th:text="${item.facturaRectificada.idFactura}"></td>
+            <td th:text="${item.fecha}"></td>
+            <td th:text="${item.motivo}"></td>
+        </tr>
+        </tbody>
+    </table>
+
+    <a th:href="@{/factura}" class="btn btn-secondary">Volver</a>
+</div>
+
+</body>
+</html>

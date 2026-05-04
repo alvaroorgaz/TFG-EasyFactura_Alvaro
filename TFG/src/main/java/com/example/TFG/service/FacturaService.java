@@ -7,10 +7,12 @@ import com.example.TFG.model.Empresa;
 import com.example.TFG.model.EstadoFactura;
 import com.example.TFG.model.Factura;
 import com.example.TFG.model.FacturaDetalle;
+import com.example.TFG.model.FacturaRectificada;
 import com.example.TFG.model.Producto;
 import com.example.TFG.repository.ClienteRepository;
 import com.example.TFG.repository.EmpresaRepository;
 import com.example.TFG.repository.FacturaDetalleRepository;
+import com.example.TFG.repository.FacturaRectificadaRepository;
 import com.example.TFG.repository.FacturaRepository;
 import com.example.TFG.repository.ProductoRepository;
 import jakarta.transaction.Transactional;
@@ -31,17 +33,20 @@ public class FacturaService {
     private final EmpresaRepository empresaRepository;
     private final ClienteRepository clienteRepository;
     private final ProductoRepository productoRepository;
+    private final FacturaRectificadaRepository facturaRectificadaRepository;
 
     public FacturaService(FacturaRepository facturaRepository,
                           FacturaDetalleRepository facturaDetalleRepository,
                           EmpresaRepository empresaRepository,
                           ClienteRepository clienteRepository,
-                          ProductoRepository productoRepository) {
+                          ProductoRepository productoRepository,
+                          FacturaRectificadaRepository facturaRectificadaRepository) {
         this.facturaRepository = facturaRepository;
         this.facturaDetalleRepository = facturaDetalleRepository;
         this.empresaRepository = empresaRepository;
         this.clienteRepository = clienteRepository;
         this.productoRepository = productoRepository;
+        this.facturaRectificadaRepository = facturaRectificadaRepository;
     }
 
     public List<Factura> obtenerFacturas(boolean esAdmin, Empresa empresaLogueada) {
@@ -81,6 +86,16 @@ public class FacturaService {
         return form;
     }
 
+    public FacturaForm crearFormularioRectificacion(Factura factura) {
+        FacturaForm form = crearFormularioDesdeFactura(factura);
+        form.setIdFactura(null);
+        form.setFacturaOriginalId(factura.getIdFactura());
+        form.setEstado(EstadoFactura.rectificada);
+        form.setHashVerifactu("");
+        form.setMotivoRectificacion("");
+        return form;
+    }
+
     public BigDecimal calcularTotalFactura(Integer idFactura) {
         List<FacturaDetalle> detalles = facturaDetalleRepository.findByFacturaId(idFactura);
         BigDecimal total = BigDecimal.ZERO;
@@ -90,6 +105,22 @@ public class FacturaService {
         }
 
         return total.setScale(2, RoundingMode.HALF_UP);
+    }
+
+    public Factura obtenerFacturaOriginalParaHistorico(Integer idFactura) {
+        FacturaRectificada relacion = facturaRectificadaRepository.findByFacturaRectificadaId(idFactura);
+        if (relacion != null) {
+            return relacion.getFacturaOriginal();
+        }
+        return obtenerFacturaPorId(idFactura);
+    }
+
+    public List<FacturaRectificada> obtenerHistoricoFactura(Integer idFactura) {
+        Factura facturaOriginal = obtenerFacturaOriginalParaHistorico(idFactura);
+        if (facturaOriginal == null) {
+            return new ArrayList<>();
+        }
+        return facturaRectificadaRepository.findByFacturaOriginalId(facturaOriginal.getIdFactura());
     }
 
     @Transactional
@@ -127,23 +158,26 @@ public class FacturaService {
         }
 
         if (detallesValidos.isEmpty()) {
-            throw new RuntimeException("Debes añadir al menos una línea de producto.");
+            throw new RuntimeException("Debes anadir al menos una linea de producto.");
         }
 
-        Factura factura;
+        Factura factura = new Factura();
+        factura.setFecha(LocalDateTime.now());
 
-        if (form.getIdFactura() == null) {
-            factura = new Factura();
-            factura.setFecha(LocalDateTime.now());
-        } else {
-            factura = facturaRepository.findById(form.getIdFactura()).orElse(null);
+        Factura facturaOriginal = null;
+        if (form.getFacturaOriginalId() != null) {
+            facturaOriginal = facturaRepository.findById(form.getFacturaOriginalId()).orElse(null);
 
-            if (factura == null) {
-                throw new RuntimeException("La factura no existe.");
+            if (facturaOriginal == null) {
+                throw new RuntimeException("La factura original no existe.");
             }
 
-            if (!esAdmin && !factura.getEmpresa().getId_empresa().equals(empresaLogueada.getId_empresa())) {
-                throw new RuntimeException("No tienes permiso para modificar esta factura.");
+            if (!esAdmin && !facturaOriginal.getEmpresa().getId_empresa().equals(empresaLogueada.getId_empresa())) {
+                throw new RuntimeException("No tienes permiso para rectificar esta factura.");
+            }
+
+            if (form.getMotivoRectificacion() == null || form.getMotivoRectificacion().isBlank()) {
+                throw new RuntimeException("Debes indicar el motivo de la rectificacion.");
             }
         }
 
@@ -158,10 +192,6 @@ public class FacturaService {
         }
 
         factura = facturaRepository.save(factura);
-
-        if (form.getIdFactura() != null) {
-            facturaDetalleRepository.deleteByFacturaId(factura.getIdFactura());
-        }
 
         for (FacturaDetalleForm detalleForm : detallesValidos) {
             Producto producto = productoRepository.findById(detalleForm.getProductoId()).orElse(null);
@@ -195,9 +225,14 @@ public class FacturaService {
 
             facturaDetalleRepository.save(detalle);
         }
-    }
 
-    public void eliminarFactura(Integer id) {
-        facturaRepository.deleteById(id);
+        if (facturaOriginal != null) {
+            FacturaRectificada relacion = new FacturaRectificada();
+            relacion.setFacturaOriginal(facturaOriginal);
+            relacion.setFacturaRectificada(factura);
+            relacion.setMotivo(form.getMotivoRectificacion().trim());
+            relacion.setFecha(LocalDateTime.now());
+            facturaRectificadaRepository.save(relacion);
+        }
     }
 }

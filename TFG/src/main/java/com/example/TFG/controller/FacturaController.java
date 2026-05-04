@@ -5,6 +5,7 @@ import com.example.TFG.dto.FacturaForm;
 import com.example.TFG.model.Empresa;
 import com.example.TFG.model.EstadoFactura;
 import com.example.TFG.model.Factura;
+import com.example.TFG.model.FacturaRectificada;
 import com.example.TFG.service.ClienteService;
 import com.example.TFG.service.EmpresaService;
 import com.example.TFG.service.FacturaService;
@@ -78,10 +79,10 @@ public class FacturaController {
         try {
             facturaService.guardarFactura(facturaForm, esAdmin(authentication), obtenerEmpresaLogueada(authentication));
 
-            if (facturaForm.getIdFactura() == null) {
-                redirectAttributes.addFlashAttribute("success", "Factura creada exitosamente.");
+            if (facturaForm.getFacturaOriginalId() != null) {
+                redirectAttributes.addFlashAttribute("success", "Nueva version de la factura creada exitosamente.");
             } else {
-                redirectAttributes.addFlashAttribute("success", "Factura actualizada exitosamente.");
+                redirectAttributes.addFlashAttribute("success", "Factura creada exitosamente.");
             }
 
             return "redirect:/factura";
@@ -95,11 +96,11 @@ public class FacturaController {
         }
     }
 
-    @GetMapping("/editar/{id}")
-    public String editarFacturaForm(@PathVariable Integer id,
-                                    Authentication authentication,
-                                    Model model,
-                                    RedirectAttributes redirectAttributes) {
+    @GetMapping("/rectificar/{id}")
+    public String rectificarFacturaForm(@PathVariable Integer id,
+                                        Authentication authentication,
+                                        Model model,
+                                        RedirectAttributes redirectAttributes) {
         Factura factura = facturaService.obtenerFacturaPorId(id);
 
         if (factura == null) {
@@ -115,7 +116,7 @@ public class FacturaController {
             return "redirect:/factura";
         }
 
-        FacturaForm facturaForm = facturaService.crearFormularioDesdeFactura(factura);
+        FacturaForm facturaForm = facturaService.crearFormularioRectificacion(factura);
         if (facturaForm.getDetalles().isEmpty()) {
             facturaForm.getDetalles().add(new FacturaDetalleForm());
         }
@@ -124,10 +125,11 @@ public class FacturaController {
         return "factura/crear";
     }
 
-    @GetMapping("/eliminar/{id}")
-    public String eliminarFactura(@PathVariable Integer id,
-                                  Authentication authentication,
-                                  RedirectAttributes redirectAttributes) {
+    @GetMapping("/historico/{id}")
+    public String verHistoricoFactura(@PathVariable Integer id,
+                                      Authentication authentication,
+                                      Model model,
+                                      RedirectAttributes redirectAttributes) {
         Factura factura = facturaService.obtenerFacturaPorId(id);
 
         if (factura == null) {
@@ -139,18 +141,18 @@ public class FacturaController {
         Empresa empresaLogueada = obtenerEmpresaLogueada(authentication);
 
         if (!esAdmin && !factura.getEmpresa().getId_empresa().equals(empresaLogueada.getId_empresa())) {
-            redirectAttributes.addFlashAttribute("error", "No tienes permiso para eliminar esta factura.");
+            redirectAttributes.addFlashAttribute("error", "No tienes permiso para consultar el historico de esta factura.");
             return "redirect:/factura";
         }
 
-        try {
-            facturaService.eliminarFactura(id);
-            redirectAttributes.addFlashAttribute("success", "Factura eliminada exitosamente.");
-        } catch (Exception e) {
-            redirectAttributes.addFlashAttribute("error", "No se pudo eliminar la factura: " + e.getMessage());
-        }
+        Factura facturaOriginal = facturaService.obtenerFacturaOriginalParaHistorico(id);
+        List<FacturaRectificada> historico = facturaService.obtenerHistoricoFactura(id);
 
-        return "redirect:/factura";
+        model.addAttribute("facturaActual", factura);
+        model.addAttribute("facturaOriginal", facturaOriginal);
+        model.addAttribute("historico", historico);
+        model.addAttribute("totalFacturaOriginal", facturaService.calcularTotalFactura(facturaOriginal.getIdFactura()));
+        return "factura/historico";
     }
 
     private void cargarDatosFormulario(Model model,
@@ -163,6 +165,7 @@ public class FacturaController {
         model.addAttribute("facturaForm", facturaForm);
         model.addAttribute("estados", EstadoFactura.values());
         model.addAttribute("esAdmin", esAdmin);
+        model.addAttribute("esRectificacion", facturaForm.getFacturaOriginalId() != null);
 
         if (esAdmin) {
             model.addAttribute("empresas", empresaService.obtenerEmpresas());

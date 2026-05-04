@@ -9,10 +9,15 @@
 
 <div class="container mt-4">
 
-    <h2 th:text="${facturaForm.idFactura == null} ? 'Nueva Factura' : 'Editar Factura'"></h2>
+    <h2 th:text="${esRectificacion} ? 'Rectificar Factura' : 'Nueva Factura'"></h2>
 
     <form th:action="@{/factura}" th:object="${facturaForm}" method="post" id="facturaForm">
         <input type="hidden" th:field="*{idFactura}" />
+        <input type="hidden" th:field="*{facturaOriginalId}" />
+
+        <div class="alert alert-warning" th:if="${esRectificacion}">
+            Estas creando una nueva version rectificativa de la factura original.
+        </div>
 
         <div class="mb-3" th:if="${esAdmin}">
             <label class="form-label">Empresa</label>
@@ -37,7 +42,7 @@
             </select>
         </div>
 
-        <div class="mb-3">
+        <div class="mb-3" th:if="${!esRectificacion}">
             <label class="form-label">Estado</label>
             <select class="form-select" th:field="*{estado}" required>
                 <option value="">Selecciona un estado</option>
@@ -48,9 +53,20 @@
             </select>
         </div>
 
+        <div class="mb-3" th:if="${esRectificacion}">
+            <label class="form-label">Estado</label>
+            <input type="text" class="form-control" value="rectificada" readonly>
+            <input type="hidden" th:field="*{estado}">
+        </div>
+
         <div class="mb-3">
             <label class="form-label">Hash VeriFactu</label>
             <input type="text" class="form-control" th:field="*{hashVerifactu}" maxlength="150">
+        </div>
+
+        <div class="mb-3" th:if="${esRectificacion}">
+            <label class="form-label">Motivo de rectificacion</label>
+            <textarea class="form-control" th:field="*{motivoRectificacion}" rows="3" required></textarea>
         </div>
 
         <h4 class="mt-4">Lineas de factura</h4>
