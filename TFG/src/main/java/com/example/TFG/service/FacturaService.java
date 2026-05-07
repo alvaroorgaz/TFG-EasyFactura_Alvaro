@@ -107,6 +107,34 @@ public class FacturaService {
         return total.setScale(2, RoundingMode.HALF_UP);
     }
 
+    public BigDecimal calcularBaseImponibleFactura(Integer idFactura) {
+        List<FacturaDetalle> detalles = facturaDetalleRepository.findByFacturaId(idFactura);
+        BigDecimal baseImponible = BigDecimal.ZERO;
+
+        for (FacturaDetalle detalle : detalles) {
+            BigDecimal baseLinea = detalle.getPrecioUnitario()
+                    .multiply(BigDecimal.valueOf(detalle.getCantidad()));
+            baseImponible = baseImponible.add(baseLinea);
+        }
+
+        return baseImponible.setScale(2, RoundingMode.HALF_UP);
+    }
+
+    public BigDecimal calcularTotalIvaFactura(Integer idFactura) {
+        List<FacturaDetalle> detalles = facturaDetalleRepository.findByFacturaId(idFactura);
+        BigDecimal totalIva = BigDecimal.ZERO;
+
+        for (FacturaDetalle detalle : detalles) {
+            BigDecimal baseLinea = detalle.getPrecioUnitario()
+                    .multiply(BigDecimal.valueOf(detalle.getCantidad()));
+            BigDecimal ivaLinea = baseLinea.multiply(BigDecimal.valueOf(detalle.getIva()))
+                    .divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP);
+            totalIva = totalIva.add(ivaLinea);
+        }
+
+        return totalIva.setScale(2, RoundingMode.HALF_UP);
+    }
+
     public Factura obtenerFacturaOriginalParaHistorico(Integer idFactura) {
         FacturaRectificada relacion = facturaRectificadaRepository.findByFacturaRectificadaId(idFactura);
         if (relacion != null) {

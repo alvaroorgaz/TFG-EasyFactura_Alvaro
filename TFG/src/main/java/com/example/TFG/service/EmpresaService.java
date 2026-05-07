@@ -12,16 +12,22 @@ public class EmpresaService {
 
     private final EmpresaRepository empresaRepository;
     private final PasswordEncoder passwordEncoder;
+    private final CertificadoEmpresaService certificadoEmpresaService;
 
-    public EmpresaService(EmpresaRepository empresaRepository, PasswordEncoder passwordEncoder) {
+    public EmpresaService(EmpresaRepository empresaRepository,
+                          PasswordEncoder passwordEncoder,
+                          CertificadoEmpresaService certificadoEmpresaService) {
         this.empresaRepository = empresaRepository;
         this.passwordEncoder = passwordEncoder;
+        this.certificadoEmpresaService = certificadoEmpresaService;
     }
 
     public Empresa crearEmpresa(Empresa empresa) {
         if (empresa.getId_empresa() == null) {
             empresa.setPassword(passwordEncoder.encode(empresa.getPassword()));
-            return empresaRepository.save(empresa);
+            Empresa empresaGuardada = empresaRepository.save(empresa);
+            certificadoEmpresaService.generarCertificadoSiNoExiste(empresaGuardada);
+            return empresaGuardada;
         }
 
         Empresa empresaExistente = empresaRepository.findById(empresa.getId_empresa()).orElse(null);
@@ -34,7 +40,9 @@ public class EmpresaService {
             }
         }
 
-        return empresaRepository.save(empresa);
+        Empresa empresaGuardada = empresaRepository.save(empresa);
+        certificadoEmpresaService.generarCertificadoSiNoExiste(empresaGuardada);
+        return empresaGuardada;
     }
 
     public List<Empresa> obtenerEmpresas() {

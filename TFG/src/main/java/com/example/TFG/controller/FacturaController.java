@@ -8,8 +8,14 @@ import com.example.TFG.model.Factura;
 import com.example.TFG.model.FacturaRectificada;
 import com.example.TFG.service.ClienteService;
 import com.example.TFG.service.EmpresaService;
+import com.example.TFG.service.FacturaPdfService;
+import com.example.TFG.service.FirmaPdfService;
 import com.example.TFG.service.FacturaService;
 import com.example.TFG.service.ProductoService;
+import org.springframework.http.ContentDisposition;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -30,15 +36,21 @@ import java.util.Map;
 public class FacturaController {
 
     private final FacturaService facturaService;
+    private final FacturaPdfService facturaPdfService;
+    private final FirmaPdfService firmaPdfService;
     private final EmpresaService empresaService;
     private final ClienteService clienteService;
     private final ProductoService productoService;
 
     public FacturaController(FacturaService facturaService,
+                             FacturaPdfService facturaPdfService,
+                             FirmaPdfService firmaPdfService,
                              EmpresaService empresaService,
                              ClienteService clienteService,
                              ProductoService productoService) {
         this.facturaService = facturaService;
+        this.facturaPdfService = facturaPdfService;
+        this.firmaPdfService = firmaPdfService;
         this.empresaService = empresaService;
         this.clienteService = clienteService;
         this.productoService = productoService;
@@ -153,6 +165,40 @@ public class FacturaController {
         model.addAttribute("historico", historico);
         model.addAttribute("totalFacturaOriginal", facturaService.calcularTotalFactura(facturaOriginal.getIdFactura()));
         return "factura/historico";
+    }
+
+    @GetMapping("/pdf/{id}")
+    public ResponseEntity<byte[]> descargarPdfFactura(@PathVariable Integer id,
+                                                      Authentication authentication) {
+        Factura factura = facturaService.obtenerFacturaPorId(id);
+
+        if (factura == null) {
+            return ResponseEntity.notFound().build();
+        }
+
+        boolean esAdmin = esAdmin(authentication);
+        Empresa empresaLogueada = obtenerEmpresaLogueada(authentication);
+
+        if (!esAdmin && !factura.getEmpresa().getId_empresa().equals(empresaLogueada.getId_empresa())) {
+            return ResponseEntity.status(403).build();
+        }
+
+        List<com.example.TFG.model.FacturaDetalle> detalles = facturaService.obtenerDetallesPorFactura(id);
+        BigDecimal baseImponible = facturaService.calcularBaseImponibleFactura(id);
+        BigDecimal totalIva = facturaService.calcularTotalIvaFactura(id);
+        BigDecimal totalFactura = facturaService.calcularTotalFactura(id);
+        byte[] pdf = facturaPdfService.generarPdf(factura, detalles, baseImponible, totalIva, totalFactura);
+        byte[] pdfFirmado = firmaPdfService.firmarPdf(pdf, factura.getEmpresa());
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_PDF);
+        headers.setContentDisposition(ContentDisposition.attachment()
+                .filename("factura-" + factura.getIdFactura() + ".pdf")
+                .build());
+
+        return ResponseEntity.ok()
+                .headers(headers)
+                .body(pdfFirmado);
     }
 
     private void cargarDatosFormulario(Model model,
