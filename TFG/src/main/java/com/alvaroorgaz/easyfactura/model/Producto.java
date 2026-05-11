@@ -1,6 +1,12 @@
 package com.alvaroorgaz.easyfactura.model;
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.DecimalMin;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
+
 import java.math.BigDecimal;
 
 @Entity
@@ -16,15 +22,21 @@ public class Producto {
     @JoinColumn(name = "id_empresa", nullable = false)
     private Empresa empresa;
 
+    @NotBlank(message = "El nombre es obligatorio.")
+    @Size(max = 100, message = "El nombre no puede superar los 100 caracteres.")
     @Column(nullable = false, length = 100)
     private String nombre;
 
     @Column(columnDefinition = "TEXT")
     private String descripcion;
 
+    @NotNull(message = "El precio es obligatorio.")
+    @DecimalMin(value = "0.01", message = "El precio debe ser mayor que 0.")
     @Column(nullable = false, precision = 10, scale = 2)
     private BigDecimal precio;
 
+    @NotNull(message = "El IVA es obligatorio.")
+    @Max(value = 21, message = "El IVA no puede ser superior a 21.")
     @Column(nullable = false)
     private Integer iva;
 

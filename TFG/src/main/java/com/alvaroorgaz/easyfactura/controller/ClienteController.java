@@ -5,9 +5,12 @@ import com.alvaroorgaz.easyfactura.model.Empresa;
 import com.alvaroorgaz.easyfactura.service.AuthService;
 import com.alvaroorgaz.easyfactura.service.ClienteService;
 import com.alvaroorgaz.easyfactura.service.EmpresaService;
+import jakarta.validation.Valid;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
+import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
@@ -28,6 +31,7 @@ public class ClienteController {
     }
 
     @GetMapping
+    @PreAuthorize("hasAnyRole('ADMIN','EMPRESA')")
     public String listaClientes(Model model, Authentication authentication) {
         Empresa empresaLogueada = authService.getEmpresaLogin();
         boolean esAdmin = authService.isAdmin();
@@ -43,6 +47,7 @@ public class ClienteController {
     }
 
     @GetMapping("/crear")
+    @PreAuthorize("hasAnyRole('ADMIN','EMPRESA')")
     public String crearClienteForm(Model model, Authentication authentication) {
         boolean esAdmin = authService.isAdmin();
 
@@ -57,12 +62,25 @@ public class ClienteController {
     }
 
     @PostMapping
-    public String guardarCliente(@ModelAttribute Cliente cliente,
+    @PreAuthorize("hasAnyRole('ADMIN','EMPRESA')")
+    public String guardarCliente(@Valid @ModelAttribute Cliente cliente,
+                                 BindingResult bindingResult,
                                  @RequestParam(required = false) Long empresaId,
                                  Authentication authentication,
                                  Model model,
                                  RedirectAttributes redirectAttributes) {
         try {
+            if (bindingResult.hasErrors()) {
+                boolean esAdmin = authService.isAdmin();
+                model.addAttribute("cliente", cliente);
+                model.addAttribute("esAdmin", esAdmin);
+                if (esAdmin) {
+                    model.addAttribute("empresas", empresaService.obtenerEmpresas());
+                }
+                model.addAttribute("error", bindingResult.getAllErrors().get(0).getDefaultMessage());
+                return "cliente/crear";
+            }
+
             boolean esAdmin = authService.isAdmin();
             Empresa empresa;
 
@@ -107,6 +125,7 @@ public class ClienteController {
     }
 
     @GetMapping("/editar/{id}")
+    @PreAuthorize("hasRole('ADMIN') or @authService.esPropietarioCliente(#id)")
     public String editarClienteForm(@PathVariable Integer id,
                                     Authentication authentication,
                                     Model model,
@@ -137,6 +156,7 @@ public class ClienteController {
     }
 
     @GetMapping("/eliminar/{id}")
+    @PreAuthorize("hasRole('ADMIN') or @authService.esPropietarioCliente(#id)")
     public String eliminarCliente(@PathVariable Integer id,
                                   Authentication authentication,
                                   RedirectAttributes redirectAttributes) {

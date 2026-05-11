@@ -31,7 +31,9 @@
                 </li>
 
                 <li class="nav-item">
-                    <a class="nav-link" href="/logout">Cerrar Sesion</a>
+                    <form th:action="@{/logout}" method="post" class="d-inline">
+                        <button type="submit" class="btn btn-link nav-link">Cerrar Sesion</button>
+                    </form>
                 </li>
 
             </ul>

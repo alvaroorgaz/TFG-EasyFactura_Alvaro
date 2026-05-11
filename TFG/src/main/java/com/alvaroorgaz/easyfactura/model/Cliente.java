@@ -1,6 +1,10 @@
 package com.alvaroorgaz.easyfactura.model;
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Pattern;
+import jakarta.validation.constraints.Size;
 
 @Entity
 @Table(name = "cliente")
@@ -15,18 +19,25 @@ public class Cliente {
     @JoinColumn(name = "id_empresa", nullable = false)
     private Empresa empresa;
 
+    @NotBlank(message = "El nombre es obligatorio.")
+    @Size(max = 100, message = "El nombre no puede superar los 100 caracteres.")
     @Column(nullable = false, length = 100)
     private String nombre;
 
+    @NotBlank(message = "El NIF es obligatorio.")
+    @Pattern(regexp = "^[A-Za-z0-9]{8,20}$", message = "El NIF debe tener un formato valido.")
     @Column(nullable = false, length = 20)
     private String nif;
 
+    @NotBlank(message = "El email es obligatorio.")
+    @Email(message = "El email no tiene un formato valido.")
     @Column(nullable = false, length = 50)
     private String email;
 
     @Column(columnDefinition = "TEXT")
     private String direccion;
 
+    @Pattern(regexp = "^[0-9]{9,20}$", message = "El telefono debe contener entre 9 y 20 digitos.")
     @Column(length = 20)
     private String telefono;
 

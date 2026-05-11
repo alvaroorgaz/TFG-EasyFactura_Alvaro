@@ -1,8 +1,15 @@
 package com.alvaroorgaz.easyfactura.dto;
 
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotNull;
+
 public class FacturaDetalleForm {
 
+    @NotNull(message = "Debes seleccionar un producto.")
     private Integer productoId;
+
+    @NotNull(message = "Debes indicar una cantidad.")
+    @Min(value = 1, message = "La cantidad debe ser mayor que 0.")
     private Integer cantidad;
 
     public Integer getProductoId() {

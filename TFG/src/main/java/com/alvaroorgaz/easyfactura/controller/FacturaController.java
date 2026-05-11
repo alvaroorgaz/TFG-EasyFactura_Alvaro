@@ -13,13 +13,16 @@ import com.alvaroorgaz.easyfactura.service.FacturaPdfService;
 import com.alvaroorgaz.easyfactura.service.FirmaPdfService;
 import com.alvaroorgaz.easyfactura.service.FacturaService;
 import com.alvaroorgaz.easyfactura.service.ProductoService;
+import jakarta.validation.Valid;
 import org.springframework.http.ContentDisposition;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
+import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -61,6 +64,7 @@ public class FacturaController {
     }
 
     @GetMapping
+    @PreAuthorize("hasAnyRole('ADMIN','EMPRESA')")
     public String listaFacturas(Model model, Authentication authentication) {
         Empresa empresaLogueada = authService.getEmpresaLogin();
         boolean esAdmin = authService.isAdmin();
@@ -79,6 +83,7 @@ public class FacturaController {
     }
 
     @GetMapping("/crear")
+    @PreAuthorize("hasAnyRole('ADMIN','EMPRESA')")
     public String crearFacturaForm(Model model, Authentication authentication) {
         FacturaForm facturaForm = new FacturaForm();
         facturaForm.getDetalles().add(new FacturaDetalleForm());
@@ -88,11 +93,21 @@ public class FacturaController {
     }
 
     @PostMapping
-    public String guardarFactura(@ModelAttribute("facturaForm") FacturaForm facturaForm,
+    @PreAuthorize("hasAnyRole('ADMIN','EMPRESA')")
+    public String guardarFactura(@Valid @ModelAttribute("facturaForm") FacturaForm facturaForm,
+                                 BindingResult bindingResult,
                                  Authentication authentication,
                                  Model model,
                                  RedirectAttributes redirectAttributes) {
         try {
+            if (bindingResult.hasErrors()) {
+                if (facturaForm.getDetalles() == null || facturaForm.getDetalles().isEmpty()) {
+                    facturaForm.getDetalles().add(new FacturaDetalleForm());
+                }
+                cargarDatosFormulario(model, facturaForm, authentication, bindingResult.getAllErrors().get(0).getDefaultMessage());
+                return "factura/crear";
+            }
+
             facturaService.guardarFactura(facturaForm, authService.isAdmin(), authService.getEmpresaLogin());
             if (facturaForm.getFacturaOriginalId() != null) {
                 redirectAttributes.addFlashAttribute("success", "Nueva version de la factura creada exitosamente.");
@@ -112,6 +127,7 @@ public class FacturaController {
     }
 
     @GetMapping("/rectificar/{id}")
+    @PreAuthorize("hasRole('ADMIN') or @authService.esPropietarioFactura(#id)")
     public String rectificarFacturaForm(@PathVariable Integer id,
                                         Authentication authentication,
                                         Model model,
@@ -141,6 +157,7 @@ public class FacturaController {
     }
 
     @GetMapping("/historico/{id}")
+    @PreAuthorize("hasRole('ADMIN') or @authService.esPropietarioFactura(#id)")
     public String verHistoricoFactura(@PathVariable Integer id,
                                       Authentication authentication,
                                       Model model,
@@ -171,6 +188,7 @@ public class FacturaController {
     }
 
     @GetMapping("/pdf/{id}")
+    @PreAuthorize("hasRole('ADMIN') or @authService.esPropietarioFactura(#id)")
     public ResponseEntity<byte[]> descargarPdfFactura(@PathVariable Integer id,
                                                       Authentication authentication) {
         Factura factura = facturaService.obtenerFacturaPorId(id);

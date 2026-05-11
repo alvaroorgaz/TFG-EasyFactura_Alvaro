@@ -1,6 +1,10 @@
 package com.alvaroorgaz.easyfactura.dto;
 
 import com.alvaroorgaz.easyfactura.model.EstadoFactura;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotEmpty;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -10,10 +14,18 @@ public class FacturaForm {
     private Integer idFactura;
     private Integer facturaOriginalId;
     private Long empresaId;
+
+    @NotNull(message = "Debes seleccionar un cliente.")
     private Integer clienteId;
+
     private EstadoFactura estado;
     private String hashVerifactu;
+
+    @Size(max = 500, message = "El motivo de rectificacion no puede superar los 500 caracteres.")
     private String motivoRectificacion;
+
+    @Valid
+    @NotEmpty(message = "Debes anadir al menos una linea de factura.")
     private List<FacturaDetalleForm> detalles = new ArrayList<>();
 
     public Integer getIdFactura() {
