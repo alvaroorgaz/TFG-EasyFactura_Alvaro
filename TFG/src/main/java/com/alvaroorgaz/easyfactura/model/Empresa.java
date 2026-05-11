@@ -20,11 +20,12 @@ public class Empresa {
     @Column(nullable = false, unique = true, length = 50)
     private String email;
 
-    @Column(nullable = false, length = 100)
+    @Column(nullable = false, length = 72)
     private String password;
 
     private String direccion;
 
+    @Column(length = 20)
     private String telefono;
 
     @OneToMany(mappedBy = "empresa")

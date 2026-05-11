@@ -23,7 +23,6 @@ import java.math.RoundingMode;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.UUID;
 
 @Service
 public class FacturaService {
@@ -34,19 +33,22 @@ public class FacturaService {
     private final ClienteRepository clienteRepository;
     private final ProductoRepository productoRepository;
     private final FacturaRectificadaRepository facturaRectificadaRepository;
+    private final VerifactuHashService verifactuHashService;
 
     public FacturaService(FacturaRepository facturaRepository,
                           FacturaDetalleRepository facturaDetalleRepository,
                           EmpresaRepository empresaRepository,
                           ClienteRepository clienteRepository,
                           ProductoRepository productoRepository,
-                          FacturaRectificadaRepository facturaRectificadaRepository) {
+                          FacturaRectificadaRepository facturaRectificadaRepository,
+                          VerifactuHashService verifactuHashService) {
         this.facturaRepository = facturaRepository;
         this.facturaDetalleRepository = facturaDetalleRepository;
         this.empresaRepository = empresaRepository;
         this.clienteRepository = clienteRepository;
         this.productoRepository = productoRepository;
         this.facturaRectificadaRepository = facturaRectificadaRepository;
+        this.verifactuHashService = verifactuHashService;
     }
 
     public List<Factura> obtenerFacturas(boolean esAdmin, Empresa empresaLogueada) {
@@ -212,14 +214,11 @@ public class FacturaService {
         factura.setEmpresa(empresa);
         factura.setCliente(cliente);
         factura.setEstado(form.getEstado() != null ? form.getEstado() : EstadoFactura.activa);
-
-        if (form.getHashVerifactu() == null || form.getHashVerifactu().isBlank()) {
-            factura.setHashVerifactu(UUID.randomUUID().toString());
-        } else {
-            factura.setHashVerifactu(form.getHashVerifactu().trim());
-        }
+        factura.setHashVerifactu("PENDIENTE");
 
         factura = facturaRepository.save(factura);
+
+        BigDecimal totalFactura = BigDecimal.ZERO;
 
         for (FacturaDetalleForm detalleForm : detallesValidos) {
             Producto producto = productoRepository.findById(detalleForm.getProductoId()).orElse(null);
@@ -252,7 +251,17 @@ public class FacturaService {
             detalle.setTotal(total);
 
             facturaDetalleRepository.save(detalle);
+            totalFactura = totalFactura.add(total);
         }
+
+        Factura facturaAnterior = facturaRepository.findUltimaFacturaAnterior(empresa.getId_empresa(), factura.getIdFactura());
+        String hashAnterior = facturaAnterior != null ? facturaAnterior.getHashVerifactu() : null;
+        factura.setHashVerifactu(verifactuHashService.generarHashFactura(
+                factura,
+                totalFactura.setScale(2, RoundingMode.HALF_UP),
+                hashAnterior
+        ));
+        factura = facturaRepository.save(factura);
 
         if (facturaOriginal != null) {
             FacturaRectificada relacion = new FacturaRectificada();

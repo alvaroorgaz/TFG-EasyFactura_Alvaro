@@ -2,6 +2,7 @@ package com.alvaroorgaz.easyfactura.controller;
 
 import com.alvaroorgaz.easyfactura.model.Cliente;
 import com.alvaroorgaz.easyfactura.model.Empresa;
+import com.alvaroorgaz.easyfactura.service.AuthService;
 import com.alvaroorgaz.easyfactura.service.ClienteService;
 import com.alvaroorgaz.easyfactura.service.EmpresaService;
 import org.springframework.security.core.Authentication;
@@ -16,16 +17,20 @@ public class ClienteController {
 
     private final ClienteService clienteService;
     private final EmpresaService empresaService;
+    private final AuthService authService;
 
-    public ClienteController(ClienteService clienteService, EmpresaService empresaService) {
+    public ClienteController(ClienteService clienteService,
+                             EmpresaService empresaService,
+                             AuthService authService) {
         this.clienteService = clienteService;
         this.empresaService = empresaService;
+        this.authService = authService;
     }
 
     @GetMapping
     public String listaClientes(Model model, Authentication authentication) {
-        Empresa empresaLogueada = obtenerEmpresaLogueada(authentication);
-        boolean esAdmin = esAdmin(authentication);
+        Empresa empresaLogueada = authService.getEmpresaLogin();
+        boolean esAdmin = authService.isAdmin();
 
         if (esAdmin) {
             model.addAttribute("clientes", clienteService.obtenerClientes());
@@ -39,7 +44,7 @@ public class ClienteController {
 
     @GetMapping("/crear")
     public String crearClienteForm(Model model, Authentication authentication) {
-        boolean esAdmin = esAdmin(authentication);
+        boolean esAdmin = authService.isAdmin();
 
         model.addAttribute("cliente", new Cliente());
         model.addAttribute("esAdmin", esAdmin);
@@ -58,13 +63,13 @@ public class ClienteController {
                                  Model model,
                                  RedirectAttributes redirectAttributes) {
         try {
-            boolean esAdmin = esAdmin(authentication);
+            boolean esAdmin = authService.isAdmin();
             Empresa empresa;
 
             if (esAdmin) {
                 empresa = empresaService.obtenerEmpresaPorId(empresaId);
             } else {
-                empresa = obtenerEmpresaLogueada(authentication);
+                empresa = authService.getEmpresaLogin();
             }
 
             if (empresa == null) {
@@ -90,7 +95,7 @@ public class ClienteController {
             return "redirect:/cliente";
 
         } catch (Exception e) {
-            boolean esAdmin = esAdmin(authentication);
+            boolean esAdmin = authService.isAdmin();
             model.addAttribute("cliente", cliente);
             model.addAttribute("esAdmin", esAdmin);
             if (esAdmin) {
@@ -113,8 +118,8 @@ public class ClienteController {
             return "redirect:/cliente";
         }
 
-        boolean esAdmin = esAdmin(authentication);
-        Empresa empresaLogueada = obtenerEmpresaLogueada(authentication);
+        boolean esAdmin = authService.isAdmin();
+        Empresa empresaLogueada = authService.getEmpresaLogin();
 
         if (!esAdmin && !cliente.getEmpresa().getId_empresa().equals(empresaLogueada.getId_empresa())) {
             redirectAttributes.addFlashAttribute("error", "No tienes permiso para editar este cliente.");
@@ -142,8 +147,8 @@ public class ClienteController {
             return "redirect:/cliente";
         }
 
-        boolean esAdmin = esAdmin(authentication);
-        Empresa empresaLogueada = obtenerEmpresaLogueada(authentication);
+        boolean esAdmin = authService.isAdmin();
+        Empresa empresaLogueada = authService.getEmpresaLogin();
 
         if (!esAdmin && !cliente.getEmpresa().getId_empresa().equals(empresaLogueada.getId_empresa())) {
             redirectAttributes.addFlashAttribute("error", "No tienes permiso para eliminar este cliente.");
@@ -158,22 +163,5 @@ public class ClienteController {
         }
 
         return "redirect:/cliente";
-    }
-
-    private boolean esAdmin(Authentication authentication) {
-        return authentication != null
-                && authentication.getAuthorities().stream()
-                .anyMatch(auth -> auth.getAuthority().equals("ROLE_ADMIN"));
-    }
-
-    private Empresa obtenerEmpresaLogueada(Authentication authentication) {
-        if (authentication == null) {
-            return null;
-        }
-
-        return empresaService.obtenerEmpresas().stream()
-                .filter(e -> e.getEmail().equals(authentication.getName()))
-                .findFirst()
-                .orElse(null);
     }
 }

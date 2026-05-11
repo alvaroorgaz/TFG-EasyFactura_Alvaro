@@ -1,6 +1,7 @@
 package com.alvaroorgaz.easyfactura.security;
 
 import com.alvaroorgaz.easyfactura.model.Empresa;
+import com.alvaroorgaz.easyfactura.model.Rol;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -24,7 +25,7 @@ public class EmpresaLoginDetails implements UserDetails {
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        if (empresa.getEmail().equals("orgazmonleonalvaro@gmail.com") && empresa.getNombre().equals("ADMIN") && empresa.getCif().equals("ADMIN")) {
+        if (empresa.getRol() == Rol.ADMIN) {
             return List.of(new SimpleGrantedAuthority("ROLE_ADMIN"));
         }
         return List.of(new SimpleGrantedAuthority("ROLE_EMPRESA"));

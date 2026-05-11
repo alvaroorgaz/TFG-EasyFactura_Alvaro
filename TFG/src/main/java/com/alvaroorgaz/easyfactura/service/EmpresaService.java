@@ -1,6 +1,7 @@
 package com.alvaroorgaz.easyfactura.service;
 
 import com.alvaroorgaz.easyfactura.model.Empresa;
+import com.alvaroorgaz.easyfactura.model.Rol;
 import com.alvaroorgaz.easyfactura.repository.EmpresaRepository;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -24,6 +25,9 @@ public class EmpresaService {
 
     public Empresa crearEmpresa(Empresa empresa) {
         if (empresa.getId_empresa() == null) {
+            if (empresa.getRol() == null) {
+                empresa.setRol(Rol.EMPRESA);
+            }
             empresa.setPassword(passwordEncoder.encode(empresa.getPassword()));
             Empresa empresaGuardada = empresaRepository.save(empresa);
             certificadoEmpresaService.generarCertificadoSiNoExiste(empresaGuardada);
@@ -38,6 +42,10 @@ public class EmpresaService {
             } else {
                 empresa.setPassword(passwordEncoder.encode(empresa.getPassword()));
             }
+
+            if (empresa.getRol() == null) {
+                empresa.setRol(empresaExistente.getRol() != null ? empresaExistente.getRol() : Rol.EMPRESA);
+            }
         }
 
         Empresa empresaGuardada = empresaRepository.save(empresa);
@@ -51,6 +59,10 @@ public class EmpresaService {
 
     public Empresa obtenerEmpresaPorId(Long id) {
         return empresaRepository.findById(id).orElse(null);
+    }
+
+    public Empresa obtenerEmpresaPorEmail(String email) {
+        return empresaRepository.findByEmail(email).orElse(null);
     }
 
     public void eliminarEmpresa(Long id) {

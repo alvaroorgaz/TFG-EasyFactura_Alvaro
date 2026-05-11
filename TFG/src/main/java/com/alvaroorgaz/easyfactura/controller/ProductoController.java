@@ -2,6 +2,7 @@ package com.alvaroorgaz.easyfactura.controller;
 
 import com.alvaroorgaz.easyfactura.model.Empresa;
 import com.alvaroorgaz.easyfactura.model.Producto;
+import com.alvaroorgaz.easyfactura.service.AuthService;
 import com.alvaroorgaz.easyfactura.service.EmpresaService;
 import com.alvaroorgaz.easyfactura.service.ProductoService;
 import org.springframework.security.core.Authentication;
@@ -16,16 +17,20 @@ public class ProductoController {
 
     private final ProductoService productoService;
     private final EmpresaService empresaService;
+    private final AuthService authService;
 
-    public ProductoController(ProductoService productoService, EmpresaService empresaService) {
+    public ProductoController(ProductoService productoService,
+                              EmpresaService empresaService,
+                              AuthService authService) {
         this.productoService = productoService;
         this.empresaService = empresaService;
+        this.authService = authService;
     }
 
     @GetMapping
     public String listaProductos(Model model, Authentication authentication) {
-        Empresa empresaLogueada = obtenerEmpresaLogueada(authentication);
-        boolean esAdmin = esAdmin(authentication);
+        Empresa empresaLogueada = authService.getEmpresaLogin();
+        boolean esAdmin = authService.isAdmin();
 
         if (esAdmin) {
             model.addAttribute("productos", productoService.obtenerProductos());
@@ -39,7 +44,7 @@ public class ProductoController {
 
     @GetMapping("/crear")
     public String crearProductoForm(Model model, Authentication authentication) {
-        boolean esAdmin = esAdmin(authentication);
+        boolean esAdmin = authService.isAdmin();
 
         model.addAttribute("producto", new Producto());
         model.addAttribute("esAdmin", esAdmin);
@@ -58,13 +63,13 @@ public class ProductoController {
                                   Model model,
                                   RedirectAttributes redirectAttributes) {
         try {
-            boolean esAdmin = esAdmin(authentication);
+            boolean esAdmin = authService.isAdmin();
             Empresa empresa;
 
             if (esAdmin) {
                 empresa = empresaService.obtenerEmpresaPorId(empresaId);
             } else {
-                empresa = obtenerEmpresaLogueada(authentication);
+                empresa = authService.getEmpresaLogin();
             }
 
             if (empresa == null) {
@@ -90,7 +95,7 @@ public class ProductoController {
             return "redirect:/producto";
 
         } catch (Exception e) {
-            boolean esAdmin = esAdmin(authentication);
+            boolean esAdmin = authService.isAdmin();
             model.addAttribute("producto", producto);
             model.addAttribute("esAdmin", esAdmin);
             if (esAdmin) {
@@ -113,8 +118,8 @@ public class ProductoController {
             return "redirect:/producto";
         }
 
-        boolean esAdmin = esAdmin(authentication);
-        Empresa empresaLogueada = obtenerEmpresaLogueada(authentication);
+        boolean esAdmin = authService.isAdmin();
+        Empresa empresaLogueada = authService.getEmpresaLogin();
 
         if (!esAdmin && !producto.getEmpresa().getId_empresa().equals(empresaLogueada.getId_empresa())) {
             redirectAttributes.addFlashAttribute("error", "No tienes permiso para editar este producto.");
@@ -142,8 +147,8 @@ public class ProductoController {
             return "redirect:/producto";
         }
 
-        boolean esAdmin = esAdmin(authentication);
-        Empresa empresaLogueada = obtenerEmpresaLogueada(authentication);
+        boolean esAdmin = authService.isAdmin();
+        Empresa empresaLogueada = authService.getEmpresaLogin();
 
         if (!esAdmin && !producto.getEmpresa().getId_empresa().equals(empresaLogueada.getId_empresa())) {
             redirectAttributes.addFlashAttribute("error", "No tienes permiso para eliminar este producto.");
@@ -158,22 +163,5 @@ public class ProductoController {
         }
 
         return "redirect:/producto";
-    }
-
-    private boolean esAdmin(Authentication authentication) {
-        return authentication != null
-                && authentication.getAuthorities().stream()
-                .anyMatch(auth -> auth.getAuthority().equals("ROLE_ADMIN"));
-    }
-
-    private Empresa obtenerEmpresaLogueada(Authentication authentication) {
-        if (authentication == null) {
-            return null;
-        }
-
-        return empresaService.obtenerEmpresas().stream()
-                .filter(e -> e.getEmail().equals(authentication.getName()))
-                .findFirst()
-                .orElse(null);
     }
 }

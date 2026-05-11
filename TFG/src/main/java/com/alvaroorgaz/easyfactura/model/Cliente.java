@@ -27,6 +27,7 @@ public class Cliente {
     @Column(columnDefinition = "TEXT")
     private String direccion;
 
+    @Column(length = 20)
     private String telefono;
 
     public Integer getIdCliente() {

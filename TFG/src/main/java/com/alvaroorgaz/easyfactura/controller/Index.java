@@ -1,6 +1,7 @@
 package com.alvaroorgaz.easyfactura.controller;
 
 import com.alvaroorgaz.easyfactura.model.Empresa;
+import com.alvaroorgaz.easyfactura.service.AuthService;
 import com.alvaroorgaz.easyfactura.service.ClienteService;
 import com.alvaroorgaz.easyfactura.service.EmpresaService;
 import com.alvaroorgaz.easyfactura.service.FacturaService;
@@ -17,27 +18,24 @@ public class Index {
     private final ClienteService clienteService;
     private final ProductoService productoService;
     private final FacturaService facturaService;
+    private final AuthService authService;
 
     public Index(EmpresaService empresaService,
                  ClienteService clienteService,
                  ProductoService productoService,
-                 FacturaService facturaService) {
+                 FacturaService facturaService,
+                 AuthService authService) {
         this.empresaService = empresaService;
         this.clienteService = clienteService;
         this.productoService = productoService;
         this.facturaService = facturaService;
+        this.authService = authService;
     }
 
     @GetMapping("/")
     public String index(Authentication authentication, Model model) {
-        boolean esAdmin = false;
-
-        if (authentication != null && authentication.getAuthorities() != null) {
-            esAdmin = authentication.getAuthorities().stream()
-                    .anyMatch(auth -> auth.getAuthority().equals("ROLE_ADMIN"));
-        }
-
-        Empresa empresaLogueada = obtenerEmpresaLogueada(authentication);
+        boolean esAdmin = authService.isAdmin();
+        Empresa empresaLogueada = authService.getEmpresaLogin();
 
         int totalClientes;
         int totalProductos;
@@ -58,16 +56,5 @@ public class Index {
         model.addAttribute("totalProductos", totalProductos);
         model.addAttribute("totalFacturas", totalFacturas);
         return "index";
-    }
-
-    private Empresa obtenerEmpresaLogueada(Authentication authentication) {
-        if (authentication == null) {
-            return null;
-        }
-
-        return empresaService.obtenerEmpresas().stream()
-                .filter(e -> e.getEmail().equals(authentication.getName()))
-                .findFirst()
-                .orElse(null);
     }
 }

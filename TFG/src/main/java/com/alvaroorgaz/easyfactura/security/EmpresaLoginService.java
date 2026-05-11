@@ -18,12 +18,8 @@ public class EmpresaLoginService implements UserDetailsService {
 
     @Override
     public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
-        Empresa empresa = empresaRepository.findAll().stream()
-                .filter(e -> e.getEmail().equals(email))
-                .findFirst()
+        Empresa empresa = empresaRepository.findByEmail(email)
                 .orElseThrow(() -> new UsernameNotFoundException("Empresa no encontrada con email: " + email));
         return new EmpresaLoginDetails(empresa);
-
-
     }
 }

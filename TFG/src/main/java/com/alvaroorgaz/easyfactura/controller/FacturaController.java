@@ -6,6 +6,7 @@ import com.alvaroorgaz.easyfactura.model.Empresa;
 import com.alvaroorgaz.easyfactura.model.EstadoFactura;
 import com.alvaroorgaz.easyfactura.model.Factura;
 import com.alvaroorgaz.easyfactura.model.FacturaRectificada;
+import com.alvaroorgaz.easyfactura.service.AuthService;
 import com.alvaroorgaz.easyfactura.service.ClienteService;
 import com.alvaroorgaz.easyfactura.service.EmpresaService;
 import com.alvaroorgaz.easyfactura.service.FacturaPdfService;
@@ -38,6 +39,7 @@ public class FacturaController {
     private final FacturaService facturaService;
     private final FacturaPdfService facturaPdfService;
     private final FirmaPdfService firmaPdfService;
+    private final AuthService authService;
     private final EmpresaService empresaService;
     private final ClienteService clienteService;
     private final ProductoService productoService;
@@ -45,12 +47,14 @@ public class FacturaController {
     public FacturaController(FacturaService facturaService,
                              FacturaPdfService facturaPdfService,
                              FirmaPdfService firmaPdfService,
+                             AuthService authService,
                              EmpresaService empresaService,
                              ClienteService clienteService,
                              ProductoService productoService) {
         this.facturaService = facturaService;
         this.facturaPdfService = facturaPdfService;
         this.firmaPdfService = firmaPdfService;
+        this.authService = authService;
         this.empresaService = empresaService;
         this.clienteService = clienteService;
         this.productoService = productoService;
@@ -58,8 +62,8 @@ public class FacturaController {
 
     @GetMapping
     public String listaFacturas(Model model, Authentication authentication) {
-        Empresa empresaLogueada = obtenerEmpresaLogueada(authentication);
-        boolean esAdmin = esAdmin(authentication);
+        Empresa empresaLogueada = authService.getEmpresaLogin();
+        boolean esAdmin = authService.isAdmin();
 
         List<Factura> facturas = facturaService.obtenerFacturas(esAdmin, empresaLogueada);
         Map<Integer, BigDecimal> totalesFacturas = new HashMap<>();
@@ -89,8 +93,7 @@ public class FacturaController {
                                  Model model,
                                  RedirectAttributes redirectAttributes) {
         try {
-            facturaService.guardarFactura(facturaForm, esAdmin(authentication), obtenerEmpresaLogueada(authentication));
-
+            facturaService.guardarFactura(facturaForm, authService.isAdmin(), authService.getEmpresaLogin());
             if (facturaForm.getFacturaOriginalId() != null) {
                 redirectAttributes.addFlashAttribute("success", "Nueva version de la factura creada exitosamente.");
             } else {
@@ -120,8 +123,8 @@ public class FacturaController {
             return "redirect:/factura";
         }
 
-        boolean esAdmin = esAdmin(authentication);
-        Empresa empresaLogueada = obtenerEmpresaLogueada(authentication);
+        boolean esAdmin = authService.isAdmin();
+        Empresa empresaLogueada = authService.getEmpresaLogin();
 
         if (!esAdmin && !factura.getEmpresa().getId_empresa().equals(empresaLogueada.getId_empresa())) {
             redirectAttributes.addFlashAttribute("error", "No tienes permiso para editar esta factura.");
@@ -149,8 +152,8 @@ public class FacturaController {
             return "redirect:/factura";
         }
 
-        boolean esAdmin = esAdmin(authentication);
-        Empresa empresaLogueada = obtenerEmpresaLogueada(authentication);
+        boolean esAdmin = authService.isAdmin();
+        Empresa empresaLogueada = authService.getEmpresaLogin();
 
         if (!esAdmin && !factura.getEmpresa().getId_empresa().equals(empresaLogueada.getId_empresa())) {
             redirectAttributes.addFlashAttribute("error", "No tienes permiso para consultar el historico de esta factura.");
@@ -176,8 +179,8 @@ public class FacturaController {
             return ResponseEntity.notFound().build();
         }
 
-        boolean esAdmin = esAdmin(authentication);
-        Empresa empresaLogueada = obtenerEmpresaLogueada(authentication);
+        boolean esAdmin = authService.isAdmin();
+        Empresa empresaLogueada = authService.getEmpresaLogin();
 
         if (!esAdmin && !factura.getEmpresa().getId_empresa().equals(empresaLogueada.getId_empresa())) {
             return ResponseEntity.status(403).build();
@@ -205,8 +208,8 @@ public class FacturaController {
                                        FacturaForm facturaForm,
                                        Authentication authentication,
                                        String error) {
-        boolean esAdmin = esAdmin(authentication);
-        Empresa empresaLogueada = obtenerEmpresaLogueada(authentication);
+        boolean esAdmin = authService.isAdmin();
+        Empresa empresaLogueada = authService.getEmpresaLogin();
 
         model.addAttribute("facturaForm", facturaForm);
         model.addAttribute("estados", EstadoFactura.values());
@@ -225,22 +228,5 @@ public class FacturaController {
         if (error != null) {
             model.addAttribute("error", error);
         }
-    }
-
-    private boolean esAdmin(Authentication authentication) {
-        return authentication != null
-                && authentication.getAuthorities().stream()
-                .anyMatch(auth -> auth.getAuthority().equals("ROLE_ADMIN"));
-    }
-
-    private Empresa obtenerEmpresaLogueada(Authentication authentication) {
-        if (authentication == null) {
-            return null;
-        }
-
-        return empresaService.obtenerEmpresas().stream()
-                .filter(e -> e.getEmail().equals(authentication.getName()))
-                .findFirst()
-                .orElse(null);
     }
 }
