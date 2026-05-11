@@ -5,14 +5,14 @@
 	<parent>
 		<groupId>org.springframework.boot</groupId>
 		<artifactId>spring-boot-starter-parent</artifactId>
-		<version>4.0.5</version>
+		<version>3.5.12</version>
 		<relativePath/> <!-- lookup parent from repository -->
 	</parent>
-	<groupId>com.example</groupId>
-	<artifactId>TFG_EasyFactura_AlvaroOrgaz</artifactId>
+	<groupId>com.alvaroorgaz</groupId>
+	<artifactId>easyfactura</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
-	<name/>
-	<description/>
+	<name>EasyFactura</name>
+	<description>Aplicacion web de facturacion para la gestion de empresas, clientes, productos y facturas.</description>
 	<url/>
 	<licenses>
 		<license/>
@@ -28,7 +28,7 @@
 		<connection/>
 		<developerConnection/>
 		<tag/>
-        <url> https://github.com/alvaroorgaz/TFG-EasyFactura_Alvaro.git</url>
+        <url>https://github.com/alvaroorgaz/TFG-EasyFactura_Alvaro.git</url>
 	</scm>
 	<properties>
 		<java.version>21</java.version>
