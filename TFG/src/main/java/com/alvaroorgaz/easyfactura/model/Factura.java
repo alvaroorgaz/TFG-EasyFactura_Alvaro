@@ -12,7 +12,7 @@ public class Factura {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id_factura")
-    private Integer idFactura;
+    private Long idFactura;
 
     @ManyToOne
     @JoinColumn(name = "id_empresa", nullable = false)
@@ -33,11 +33,11 @@ public class Factura {
     @OneToMany(mappedBy = "factura")
     private List<FacturaDetalle> detalles;
 
-    public Integer getIdFactura() {
+    public Long getIdFactura() {
         return idFactura;
     }
 
-    public void setIdFactura(Integer idFactura) {
+    public void setIdFactura(Long idFactura) {
         this.idFactura = idFactura;
     }
 

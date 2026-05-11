@@ -1,19 +1,26 @@
 package com.alvaroorgaz.easyfactura.service;
 
+import com.alvaroorgaz.easyfactura.dto.ResumenFactura;
 import com.alvaroorgaz.easyfactura.model.Factura;
 import com.alvaroorgaz.easyfactura.model.FacturaDetalle;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.pdmodel.PDPage;
 import org.apache.pdfbox.pdmodel.PDPageContentStream;
 import org.apache.pdfbox.pdmodel.common.PDRectangle;
+import org.apache.pdfbox.pdmodel.font.PDFont;
+import org.apache.pdfbox.pdmodel.font.PDType0Font;
 import org.apache.pdfbox.pdmodel.font.PDType1Font;
 import org.apache.pdfbox.pdmodel.font.Standard14Fonts;
 import org.springframework.stereotype.Service;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Locale;
@@ -28,14 +35,12 @@ public class FacturaPdfService {
 
     public byte[] generarPdf(Factura factura,
                              List<FacturaDetalle> detalles,
-                             BigDecimal baseImponible,
-                             BigDecimal totalIva,
-                             BigDecimal totalFactura) {
+                             ResumenFactura resumenFactura) {
         try (PDDocument document = new PDDocument();
              ByteArrayOutputStream outputStream = new ByteArrayOutputStream()) {
 
-            PDType1Font fontRegular = new PDType1Font(Standard14Fonts.FontName.HELVETICA);
-            PDType1Font fontBold = new PDType1Font(Standard14Fonts.FontName.HELVETICA_BOLD);
+            PDFont fontRegular = cargarFuenteRegular(document);
+            PDFont fontBold = cargarFuenteBold(document);
 
             PdfPageState pageState = crearPagina(document);
 
@@ -53,7 +58,7 @@ public class FacturaPdfService {
                 y = escribirLinea(contentStream, fontRegular, 10, MARGIN, y, factura.getEmpresa().getNombre());
                 y = escribirLinea(contentStream, fontRegular, 10, MARGIN, y, "CIF: " + factura.getEmpresa().getCif());
                 y = escribirLinea(contentStream, fontRegular, 10, MARGIN, y, "Email: " + factura.getEmpresa().getEmail());
-                y = escribirLinea(contentStream, fontRegular, 10, MARGIN, y, "Telefono: " + factura.getEmpresa().getTelefono());
+                y = escribirLinea(contentStream, fontRegular, 10, MARGIN, y, "Telefono: " + valorSeguro(factura.getEmpresa().getTelefono()));
                 if (factura.getEmpresa().getDireccion() != null && !factura.getEmpresa().getDireccion().isBlank()) {
                     y = escribirLinea(contentStream, fontRegular, 10, MARGIN, y, "Direccion: " + factura.getEmpresa().getDireccion());
                 }
@@ -63,7 +68,7 @@ public class FacturaPdfService {
                 y = escribirLinea(contentStream, fontRegular, 10, MARGIN, y, factura.getCliente().getNombre());
                 y = escribirLinea(contentStream, fontRegular, 10, MARGIN, y, "NIF: " + factura.getCliente().getNif());
                 y = escribirLinea(contentStream, fontRegular, 10, MARGIN, y, "Email: " + factura.getCliente().getEmail());
-                y = escribirLinea(contentStream, fontRegular, 10, MARGIN, y, "Telefono: " + factura.getCliente().getTelefono());
+                y = escribirLinea(contentStream, fontRegular, 10, MARGIN, y, "Telefono: " + valorSeguro(factura.getCliente().getTelefono()));
                 if (factura.getCliente().getDireccion() != null && !factura.getCliente().getDireccion().isBlank()) {
                     y = escribirLinea(contentStream, fontRegular, 10, MARGIN, y, "Direccion: " + factura.getCliente().getDireccion());
                 }
@@ -107,9 +112,9 @@ public class FacturaPdfService {
 
                 y -= 10;
                 y = escribirLinea(contentStream, fontBold, 12, 360, y, "Resumen");
-                y = escribirLinea(contentStream, fontRegular, 10, 360, y, "Base imponible: " + formatearImporte(baseImponible));
-                y = escribirLinea(contentStream, fontRegular, 10, 360, y, "Total IVA: " + formatearImporte(totalIva));
-                y = escribirLinea(contentStream, fontBold, 11, 360, y, "Total factura: " + formatearImporte(totalFactura));
+                y = escribirLinea(contentStream, fontRegular, 10, 360, y, "Base imponible: " + formatearImporte(resumenFactura.baseImponible()));
+                y = escribirLinea(contentStream, fontRegular, 10, 360, y, "Total IVA: " + formatearImporte(resumenFactura.totalIva()));
+                y = escribirLinea(contentStream, fontBold, 11, 360, y, "Total factura: " + formatearImporte(resumenFactura.totalFactura()));
             } finally {
                 pageState.contentStream.close();
             }
@@ -122,7 +127,7 @@ public class FacturaPdfService {
     }
 
     private float escribirLinea(PDPageContentStream contentStream,
-                                PDType1Font font,
+                                PDFont font,
                                 float fontSize,
                                 float x,
                                 float y,
@@ -132,7 +137,7 @@ public class FacturaPdfService {
     }
 
     private void escribirTexto(PDPageContentStream contentStream,
-                               PDType1Font font,
+                               PDFont font,
                                float fontSize,
                                float x,
                                float y,
@@ -145,7 +150,7 @@ public class FacturaPdfService {
     }
 
     private void dibujarCabeceraTabla(PDPageContentStream contentStream,
-                                      PDType1Font font,
+                                      PDFont font,
                                       float y) throws IOException {
         escribirTexto(contentStream, font, 9, 55, y, "Producto");
         escribirTexto(contentStream, font, 9, 245, y, "Ud.");
@@ -169,6 +174,30 @@ public class FacturaPdfService {
 
     private String formatearImporte(BigDecimal valor) {
         return String.format(Locale.US, "%.2f EUR", valor);
+    }
+
+    private String valorSeguro(String valor) {
+        return valor != null ? valor : "";
+    }
+
+    private PDFont cargarFuenteRegular(PDDocument document) throws IOException {
+        return cargarFuenteUnicode(document, "arial.ttf", Standard14Fonts.FontName.HELVETICA);
+    }
+
+    private PDFont cargarFuenteBold(PDDocument document) throws IOException {
+        return cargarFuenteUnicode(document, "arialbd.ttf", Standard14Fonts.FontName.HELVETICA_BOLD);
+    }
+
+    private PDFont cargarFuenteUnicode(PDDocument document,
+                                       String windowsFontName,
+                                       Standard14Fonts.FontName fallbackFont) throws IOException {
+        Path windowsFontPath = Paths.get(System.getenv().getOrDefault("WINDIR", "C:\\Windows"), "Fonts", windowsFontName);
+        if (Files.exists(windowsFontPath)) {
+            try (InputStream inputStream = Files.newInputStream(windowsFontPath)) {
+                return PDType0Font.load(document, inputStream, true);
+            }
+        }
+        return new PDType1Font(fallbackFont);
     }
 
     private PdfPageState crearPagina(PDDocument document) throws IOException {

@@ -1,16 +1,53 @@
-# Getting Started
+# Help
 
-### Reference Documentation
-For further reference, please consider the following sections:
+## Ejecucion en desarrollo
 
-* [Official Apache Maven documentation](https://maven.apache.org/guides/index.html)
-* [Spring Boot Maven Plugin Reference Guide](https://docs.spring.io/spring-boot/4.0.5/maven-plugin)
-* [Create an OCI image](https://docs.spring.io/spring-boot/4.0.5/maven-plugin/build-image.html)
+1. Configura las variables de entorno:
+   - `DB_URL`
+   - `DB_USER`
+   - `DB_PASSWORD`
+   - `CERT_MASTER_SECRET`
+2. Arranca la aplicacion con:
 
-### Maven Parent overrides
+```powershell
+.\mvnw.cmd spring-boot:run
+```
 
-Due to Maven's design, elements are inherited from the parent POM to the project POM.
-While most of the inheritance is fine, it also inherits unwanted elements like `<license>` and `<developers>` from the parent.
-To prevent this, the project POM contains empty overrides for these elements.
-If you manually switch to a different parent and actually want the inheritance, you need to remove those overrides.
+3. Accede a `http://localhost:8080`.
 
+## Perfiles disponibles
+
+- `dev`: pensado para desarrollo local, muestra SQL y permite `ddl-auto=update`.
+- `prod`: pensado para despliegue, no muestra SQL y deja `ddl-auto=validate`.
+
+Para cambiar de perfil:
+
+```powershell
+$env:SPRING_PROFILES_ACTIVE="prod"
+```
+
+## Credenciales iniciales
+
+El administrador inicial se crea automaticamente si no existe, usando estas variables:
+
+- `ADMIN_NOMBRE`
+- `ADMIN_CIF`
+- `ADMIN_EMAIL`
+- `ADMIN_PASSWORD`
+
+Si no defines valores, se usan los configurados por defecto en `application.properties`.
+
+## Certificados locales
+
+Cada empresa genera un certificado `.p12` local al darse de alta. Los certificados se guardan en la carpeta `certificados/` y se usan para firmar digitalmente los PDFs de factura.
+
+## Modulo de facturas
+
+El sistema permite:
+
+- crear facturas con lineas dinamicas
+- calcular base imponible, IVA y total
+- generar hash encadenado
+- descargar PDF
+- firmar el PDF con el certificado de la empresa
+- rectificar facturas y consultar historico

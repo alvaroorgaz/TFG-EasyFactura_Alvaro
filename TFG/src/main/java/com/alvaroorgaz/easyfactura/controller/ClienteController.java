@@ -126,7 +126,7 @@ public class ClienteController {
 
     @GetMapping("/editar/{id}")
     @PreAuthorize("hasRole('ADMIN') or @authService.esPropietarioCliente(#id)")
-    public String editarClienteForm(@PathVariable Integer id,
+    public String editarClienteForm(@PathVariable Long id,
                                     Authentication authentication,
                                     Model model,
                                     RedirectAttributes redirectAttributes) {
@@ -157,7 +157,7 @@ public class ClienteController {
 
     @GetMapping("/eliminar/{id}")
     @PreAuthorize("hasRole('ADMIN') or @authService.esPropietarioCliente(#id)")
-    public String eliminarCliente(@PathVariable Integer id,
+    public String eliminarCliente(@PathVariable Long id,
                                   Authentication authentication,
                                   RedirectAttributes redirectAttributes) {
         Cliente cliente = clienteService.obtenerClientePorId(id);

@@ -11,7 +11,7 @@ public class FacturaDetalle {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id_detalle")
-    private Integer idDetalle;
+    private Long idDetalle;
 
     @ManyToOne
     @JoinColumn(name = "id_factura", nullable = false)
@@ -33,11 +33,11 @@ public class FacturaDetalle {
     @Column(nullable = false, precision = 10, scale = 2)
     private BigDecimal total;
 
-    public Integer getIdDetalle() {
+    public Long getIdDetalle() {
         return idDetalle;
     }
 
-    public void setIdDetalle(Integer idDetalle) {
+    public void setIdDetalle(Long idDetalle) {
         this.idDetalle = idDetalle;
     }
 

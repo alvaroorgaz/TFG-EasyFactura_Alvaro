@@ -126,7 +126,7 @@ public class ProductoController {
 
     @GetMapping("/editar/{id}")
     @PreAuthorize("hasRole('ADMIN') or @authService.esPropietarioProducto(#id)")
-    public String editarProductoForm(@PathVariable Integer id,
+    public String editarProductoForm(@PathVariable Long id,
                                      Authentication authentication,
                                      Model model,
                                      RedirectAttributes redirectAttributes) {
@@ -157,7 +157,7 @@ public class ProductoController {
 
     @GetMapping("/eliminar/{id}")
     @PreAuthorize("hasRole('ADMIN') or @authService.esPropietarioProducto(#id)")
-    public String eliminarProducto(@PathVariable Integer id,
+    public String eliminarProducto(@PathVariable Long id,
                                    Authentication authentication,
                                    RedirectAttributes redirectAttributes) {
         Producto producto = productoService.obtenerProductoPorId(id);

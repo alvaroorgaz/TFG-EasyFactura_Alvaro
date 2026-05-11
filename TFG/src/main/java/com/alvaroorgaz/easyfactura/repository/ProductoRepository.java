@@ -7,7 +7,7 @@ import org.springframework.data.repository.query.Param;
 
 import java.util.List;
 
-public interface ProductoRepository extends JpaRepository<Producto, Integer> {
+public interface ProductoRepository extends JpaRepository<Producto, Long> {
     @Query("SELECT p FROM Producto p WHERE p.empresa.id_empresa = :idEmpresa")
     List<Producto> findProductosByEmpresaId(@Param("idEmpresa") Long idEmpresa);
 }

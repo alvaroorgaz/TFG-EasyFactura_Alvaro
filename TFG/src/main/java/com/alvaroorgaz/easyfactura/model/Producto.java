@@ -16,7 +16,7 @@ public class Producto {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id_producto")
-    private Integer idProducto;
+    private Long idProducto;
 
     @ManyToOne
     @JoinColumn(name = "id_empresa", nullable = false)
@@ -40,11 +40,11 @@ public class Producto {
     @Column(nullable = false)
     private Integer iva;
 
-    public Integer getIdProducto() {
+    public Long getIdProducto() {
         return idProducto;
     }
 
-    public void setIdProducto(Integer idProducto) {
+    public void setIdProducto(Long idProducto) {
         this.idProducto = idProducto;
     }
 

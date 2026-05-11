@@ -2,6 +2,7 @@ package com.alvaroorgaz.easyfactura.controller;
 
 import com.alvaroorgaz.easyfactura.dto.FacturaDetalleForm;
 import com.alvaroorgaz.easyfactura.dto.FacturaForm;
+import com.alvaroorgaz.easyfactura.dto.ResumenFactura;
 import com.alvaroorgaz.easyfactura.model.Empresa;
 import com.alvaroorgaz.easyfactura.model.EstadoFactura;
 import com.alvaroorgaz.easyfactura.model.Factura;
@@ -70,7 +71,7 @@ public class FacturaController {
         boolean esAdmin = authService.isAdmin();
 
         List<Factura> facturas = facturaService.obtenerFacturas(esAdmin, empresaLogueada);
-        Map<Integer, BigDecimal> totalesFacturas = new HashMap<>();
+        Map<Long, BigDecimal> totalesFacturas = new HashMap<>();
 
         for (Factura factura : facturas) {
             totalesFacturas.put(factura.getIdFactura(), facturaService.calcularTotalFactura(factura.getIdFactura()));
@@ -128,7 +129,7 @@ public class FacturaController {
 
     @GetMapping("/rectificar/{id}")
     @PreAuthorize("hasRole('ADMIN') or @authService.esPropietarioFactura(#id)")
-    public String rectificarFacturaForm(@PathVariable Integer id,
+    public String rectificarFacturaForm(@PathVariable Long id,
                                         Authentication authentication,
                                         Model model,
                                         RedirectAttributes redirectAttributes) {
@@ -158,7 +159,7 @@ public class FacturaController {
 
     @GetMapping("/historico/{id}")
     @PreAuthorize("hasRole('ADMIN') or @authService.esPropietarioFactura(#id)")
-    public String verHistoricoFactura(@PathVariable Integer id,
+    public String verHistoricoFactura(@PathVariable Long id,
                                       Authentication authentication,
                                       Model model,
                                       RedirectAttributes redirectAttributes) {
@@ -189,7 +190,7 @@ public class FacturaController {
 
     @GetMapping("/pdf/{id}")
     @PreAuthorize("hasRole('ADMIN') or @authService.esPropietarioFactura(#id)")
-    public ResponseEntity<byte[]> descargarPdfFactura(@PathVariable Integer id,
+    public ResponseEntity<byte[]> descargarPdfFactura(@PathVariable Long id,
                                                       Authentication authentication) {
         Factura factura = facturaService.obtenerFacturaPorId(id);
 
@@ -205,10 +206,8 @@ public class FacturaController {
         }
 
         List<com.alvaroorgaz.easyfactura.model.FacturaDetalle> detalles = facturaService.obtenerDetallesPorFactura(id);
-        BigDecimal baseImponible = facturaService.calcularBaseImponibleFactura(id);
-        BigDecimal totalIva = facturaService.calcularTotalIvaFactura(id);
-        BigDecimal totalFactura = facturaService.calcularTotalFactura(id);
-        byte[] pdf = facturaPdfService.generarPdf(factura, detalles, baseImponible, totalIva, totalFactura);
+        ResumenFactura resumenFactura = facturaService.calcularResumenFactura(id);
+        byte[] pdf = facturaPdfService.generarPdf(factura, detalles, resumenFactura);
         byte[] pdfFirmado = firmaPdfService.firmarPdf(pdf, factura.getEmpresa());
 
         HttpHeaders headers = new HttpHeaders();

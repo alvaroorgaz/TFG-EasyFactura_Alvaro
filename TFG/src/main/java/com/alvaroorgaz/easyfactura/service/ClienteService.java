@@ -27,11 +27,11 @@ public class ClienteService {
         return clienteRepository.findClientesByEmpresaId(idEmpresa);
     }
 
-    public Cliente obtenerClientePorId(Integer id) {
+    public Cliente obtenerClientePorId(Long id) {
         return clienteRepository.findById(id).orElse(null);
     }
 
-    public void eliminarCliente(Integer id) {
+    public void eliminarCliente(Long id) {
         clienteRepository.deleteById(id);
     }
 }

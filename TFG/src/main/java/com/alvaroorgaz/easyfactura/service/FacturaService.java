@@ -2,6 +2,7 @@ package com.alvaroorgaz.easyfactura.service;
 
 import com.alvaroorgaz.easyfactura.dto.FacturaDetalleForm;
 import com.alvaroorgaz.easyfactura.dto.FacturaForm;
+import com.alvaroorgaz.easyfactura.dto.ResumenFactura;
 import com.alvaroorgaz.easyfactura.model.Cliente;
 import com.alvaroorgaz.easyfactura.model.Empresa;
 import com.alvaroorgaz.easyfactura.model.EstadoFactura;
@@ -58,11 +59,11 @@ public class FacturaService {
         return facturaRepository.findFacturasByEmpresaId(empresaLogueada.getId_empresa());
     }
 
-    public Factura obtenerFacturaPorId(Integer id) {
+    public Factura obtenerFacturaPorId(Long id) {
         return facturaRepository.findById(id).orElse(null);
     }
 
-    public List<FacturaDetalle> obtenerDetallesPorFactura(Integer idFactura) {
+    public List<FacturaDetalle> obtenerDetallesPorFactura(Long idFactura) {
         return facturaDetalleRepository.findByFacturaId(idFactura);
     }
 
@@ -98,46 +99,42 @@ public class FacturaService {
         return form;
     }
 
-    public BigDecimal calcularTotalFactura(Integer idFactura) {
-        List<FacturaDetalle> detalles = facturaDetalleRepository.findByFacturaId(idFactura);
-        BigDecimal total = BigDecimal.ZERO;
-
-        for (FacturaDetalle detalle : detalles) {
-            total = total.add(detalle.getTotal());
-        }
-
-        return total.setScale(2, RoundingMode.HALF_UP);
-    }
-
-    public BigDecimal calcularBaseImponibleFactura(Integer idFactura) {
+    public ResumenFactura calcularResumenFactura(Long idFactura) {
         List<FacturaDetalle> detalles = facturaDetalleRepository.findByFacturaId(idFactura);
         BigDecimal baseImponible = BigDecimal.ZERO;
+        BigDecimal totalIva = BigDecimal.ZERO;
+        BigDecimal totalFactura = BigDecimal.ZERO;
 
         for (FacturaDetalle detalle : detalles) {
             BigDecimal baseLinea = detalle.getPrecioUnitario()
                     .multiply(BigDecimal.valueOf(detalle.getCantidad()));
             baseImponible = baseImponible.add(baseLinea);
-        }
-
-        return baseImponible.setScale(2, RoundingMode.HALF_UP);
-    }
-
-    public BigDecimal calcularTotalIvaFactura(Integer idFactura) {
-        List<FacturaDetalle> detalles = facturaDetalleRepository.findByFacturaId(idFactura);
-        BigDecimal totalIva = BigDecimal.ZERO;
-
-        for (FacturaDetalle detalle : detalles) {
-            BigDecimal baseLinea = detalle.getPrecioUnitario()
-                    .multiply(BigDecimal.valueOf(detalle.getCantidad()));
             BigDecimal ivaLinea = baseLinea.multiply(BigDecimal.valueOf(detalle.getIva()))
                     .divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP);
             totalIva = totalIva.add(ivaLinea);
+            totalFactura = totalFactura.add(detalle.getTotal());
         }
 
-        return totalIva.setScale(2, RoundingMode.HALF_UP);
+        return new ResumenFactura(
+                baseImponible.setScale(2, RoundingMode.HALF_UP),
+                totalIva.setScale(2, RoundingMode.HALF_UP),
+                totalFactura.setScale(2, RoundingMode.HALF_UP)
+        );
     }
 
-    public Factura obtenerFacturaOriginalParaHistorico(Integer idFactura) {
+    public BigDecimal calcularTotalFactura(Long idFactura) {
+        return calcularResumenFactura(idFactura).totalFactura();
+    }
+
+    public BigDecimal calcularBaseImponibleFactura(Long idFactura) {
+        return calcularResumenFactura(idFactura).baseImponible();
+    }
+
+    public BigDecimal calcularTotalIvaFactura(Long idFactura) {
+        return calcularResumenFactura(idFactura).totalIva();
+    }
+
+    public Factura obtenerFacturaOriginalParaHistorico(Long idFactura) {
         FacturaRectificada relacion = facturaRectificadaRepository.findByFacturaRectificadaId(idFactura);
         if (relacion != null) {
             return relacion.getFacturaOriginal();
@@ -145,7 +142,7 @@ public class FacturaService {
         return obtenerFacturaPorId(idFactura);
     }
 
-    public List<FacturaRectificada> obtenerHistoricoFactura(Integer idFactura) {
+    public List<FacturaRectificada> obtenerHistoricoFactura(Long idFactura) {
         Factura facturaOriginal = obtenerFacturaOriginalParaHistorico(idFactura);
         if (facturaOriginal == null) {
             return new ArrayList<>();

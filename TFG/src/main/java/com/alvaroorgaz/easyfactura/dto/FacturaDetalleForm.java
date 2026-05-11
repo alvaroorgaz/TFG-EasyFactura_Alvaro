@@ -6,17 +6,17 @@ import jakarta.validation.constraints.NotNull;
 public class FacturaDetalleForm {
 
     @NotNull(message = "Debes seleccionar un producto.")
-    private Integer productoId;
+    private Long productoId;
 
     @NotNull(message = "Debes indicar una cantidad.")
     @Min(value = 1, message = "La cantidad debe ser mayor que 0.")
     private Integer cantidad;
 
-    public Integer getProductoId() {
+    public Long getProductoId() {
         return productoId;
     }
 
-    public void setProductoId(Integer productoId) {
+    public void setProductoId(Long productoId) {
         this.productoId = productoId;
     }
 

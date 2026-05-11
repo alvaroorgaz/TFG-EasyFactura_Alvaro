@@ -27,11 +27,11 @@ public class ProductoService {
         return productoRepository.findProductosByEmpresaId(idEmpresa);
     }
 
-    public Producto obtenerProductoPorId(Integer id) {
+    public Producto obtenerProductoPorId(Long id) {
         return productoRepository.findById(id).orElse(null);
     }
 
-    public void eliminarProducto(Integer id) {
+    public void eliminarProducto(Long id) {
         productoRepository.deleteById(id);
     }
 }

@@ -11,7 +11,7 @@ public class FacturaRectificada {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id_rectificacion")
-    private Integer idRectificacion;
+    private Long idRectificacion;
 
     @ManyToOne
     @JoinColumn(name = "id_factura_original", nullable = false)
@@ -26,11 +26,11 @@ public class FacturaRectificada {
 
     private LocalDateTime fecha;
 
-    public Integer getIdRectificacion() {
+    public Long getIdRectificacion() {
         return idRectificacion;
     }
 
-    public void setIdRectificacion(Integer idRectificacion) {
+    public void setIdRectificacion(Long idRectificacion) {
         this.idRectificacion = idRectificacion;
     }
 

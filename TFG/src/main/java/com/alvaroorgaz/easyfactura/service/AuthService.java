@@ -56,7 +56,7 @@ public class AuthService {
         return empresa != null && empresaId != null && empresaId.equals(empresa.getId_empresa());
     }
 
-    public boolean esPropietarioCliente(Integer id) {
+    public boolean esPropietarioCliente(Long id) {
         Empresa empresa = getEmpresaLogin();
         if (empresa == null || id == null) {
             return false;
@@ -67,7 +67,7 @@ public class AuthService {
                 .orElse(false);
     }
 
-    public boolean esPropietarioProducto(Integer id) {
+    public boolean esPropietarioProducto(Long id) {
         Empresa empresa = getEmpresaLogin();
         if (empresa == null || id == null) {
             return false;
@@ -78,7 +78,7 @@ public class AuthService {
                 .orElse(false);
     }
 
-    public boolean esPropietarioFactura(Integer id) {
+    public boolean esPropietarioFactura(Long id) {
         Empresa empresa = getEmpresaLogin();
         if (empresa == null || id == null) {
             return false;

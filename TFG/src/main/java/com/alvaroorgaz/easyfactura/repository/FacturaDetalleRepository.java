@@ -8,12 +8,12 @@ import org.springframework.data.repository.query.Param;
 
 import java.util.List;
 
-public interface FacturaDetalleRepository extends JpaRepository<FacturaDetalle, Integer> {
+public interface FacturaDetalleRepository extends JpaRepository<FacturaDetalle, Long> {
 
     @Query("SELECT fd FROM FacturaDetalle fd WHERE fd.factura.idFactura = :idFactura")
-    List<FacturaDetalle> findByFacturaId(@Param("idFactura") Integer idFactura);
+    List<FacturaDetalle> findByFacturaId(@Param("idFactura") Long idFactura);
 
     @Modifying
     @Query("DELETE FROM FacturaDetalle fd WHERE fd.factura.idFactura = :idFactura")
-    void deleteByFacturaId(@Param("idFactura") Integer idFactura);
+    void deleteByFacturaId(@Param("idFactura") Long idFactura);
 }

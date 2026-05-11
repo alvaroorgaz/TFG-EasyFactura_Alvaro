@@ -11,12 +11,12 @@ import java.util.List;
 
 public class FacturaForm {
 
-    private Integer idFactura;
-    private Integer facturaOriginalId;
+    private Long idFactura;
+    private Long facturaOriginalId;
     private Long empresaId;
 
     @NotNull(message = "Debes seleccionar un cliente.")
-    private Integer clienteId;
+    private Long clienteId;
 
     private EstadoFactura estado;
     private String hashVerifactu;
@@ -28,19 +28,19 @@ public class FacturaForm {
     @NotEmpty(message = "Debes anadir al menos una linea de factura.")
     private List<FacturaDetalleForm> detalles = new ArrayList<>();
 
-    public Integer getIdFactura() {
+    public Long getIdFactura() {
         return idFactura;
     }
 
-    public void setIdFactura(Integer idFactura) {
+    public void setIdFactura(Long idFactura) {
         this.idFactura = idFactura;
     }
 
-    public Integer getFacturaOriginalId() {
+    public Long getFacturaOriginalId() {
         return facturaOriginalId;
     }
 
-    public void setFacturaOriginalId(Integer facturaOriginalId) {
+    public void setFacturaOriginalId(Long facturaOriginalId) {
         this.facturaOriginalId = facturaOriginalId;
     }
 
@@ -52,11 +52,11 @@ public class FacturaForm {
         this.empresaId = empresaId;
     }
 
-    public Integer getClienteId() {
+    public Long getClienteId() {
         return clienteId;
     }
 
-    public void setClienteId(Integer clienteId) {
+    public void setClienteId(Long clienteId) {
         this.clienteId = clienteId;
     }
 
