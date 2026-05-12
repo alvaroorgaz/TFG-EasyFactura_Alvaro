@@ -23,15 +23,15 @@ public class ProductoService {
         return productoRepository.findAll();
     }
 
-    public List<Producto> obtenerProductosPorEmpresa(Long idEmpresa) {
+    public List<Producto> obtenerProductosPorEmpresa(Integer idEmpresa) {
         return productoRepository.findProductosByEmpresaId(idEmpresa);
     }
 
-    public Producto obtenerProductoPorId(Long id) {
+    public Producto obtenerProductoPorId(Integer id) {
         return productoRepository.findById(id).orElse(null);
     }
 
-    public void eliminarProducto(Long id) {
+    public void eliminarProducto(Integer id) {
         productoRepository.deleteById(id);
     }
 }

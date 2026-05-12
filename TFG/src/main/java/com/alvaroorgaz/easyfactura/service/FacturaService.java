@@ -34,7 +34,7 @@ public class FacturaService {
     private final ClienteRepository clienteRepository;
     private final ProductoRepository productoRepository;
     private final FacturaRectificadaRepository facturaRectificadaRepository;
-    private final VerifactuHashService verifactuHashService;
+    private final CertificadoEmpresaService certificadoEmpresaService;
 
     public FacturaService(FacturaRepository facturaRepository,
                           FacturaDetalleRepository facturaDetalleRepository,
@@ -42,14 +42,14 @@ public class FacturaService {
                           ClienteRepository clienteRepository,
                           ProductoRepository productoRepository,
                           FacturaRectificadaRepository facturaRectificadaRepository,
-                          VerifactuHashService verifactuHashService) {
+                          CertificadoEmpresaService certificadoEmpresaService) {
         this.facturaRepository = facturaRepository;
         this.facturaDetalleRepository = facturaDetalleRepository;
         this.empresaRepository = empresaRepository;
         this.clienteRepository = clienteRepository;
         this.productoRepository = productoRepository;
         this.facturaRectificadaRepository = facturaRectificadaRepository;
-        this.verifactuHashService = verifactuHashService;
+        this.certificadoEmpresaService = certificadoEmpresaService;
     }
 
     public List<Factura> obtenerFacturas(boolean esAdmin, Empresa empresaLogueada) {
@@ -59,11 +59,11 @@ public class FacturaService {
         return facturaRepository.findFacturasByEmpresaId(empresaLogueada.getId_empresa());
     }
 
-    public Factura obtenerFacturaPorId(Long id) {
+    public Factura obtenerFacturaPorId(Integer id) {
         return facturaRepository.findById(id).orElse(null);
     }
 
-    public List<FacturaDetalle> obtenerDetallesPorFactura(Long idFactura) {
+    public List<FacturaDetalle> obtenerDetallesPorFactura(Integer idFactura) {
         return facturaDetalleRepository.findByFacturaId(idFactura);
     }
 
@@ -99,7 +99,7 @@ public class FacturaService {
         return form;
     }
 
-    public ResumenFactura calcularResumenFactura(Long idFactura) {
+    public ResumenFactura calcularResumenFactura(Integer idFactura) {
         List<FacturaDetalle> detalles = facturaDetalleRepository.findByFacturaId(idFactura);
         BigDecimal baseImponible = BigDecimal.ZERO;
         BigDecimal totalIva = BigDecimal.ZERO;
@@ -122,19 +122,19 @@ public class FacturaService {
         );
     }
 
-    public BigDecimal calcularTotalFactura(Long idFactura) {
+    public BigDecimal calcularTotalFactura(Integer idFactura) {
         return calcularResumenFactura(idFactura).totalFactura();
     }
 
-    public BigDecimal calcularBaseImponibleFactura(Long idFactura) {
+    public BigDecimal calcularBaseImponibleFactura(Integer idFactura) {
         return calcularResumenFactura(idFactura).baseImponible();
     }
 
-    public BigDecimal calcularTotalIvaFactura(Long idFactura) {
+    public BigDecimal calcularTotalIvaFactura(Integer idFactura) {
         return calcularResumenFactura(idFactura).totalIva();
     }
 
-    public Factura obtenerFacturaOriginalParaHistorico(Long idFactura) {
+    public Factura obtenerFacturaOriginalParaHistorico(Integer idFactura) {
         FacturaRectificada relacion = facturaRectificadaRepository.findByFacturaRectificadaId(idFactura);
         if (relacion != null) {
             return relacion.getFacturaOriginal();
@@ -142,7 +142,7 @@ public class FacturaService {
         return obtenerFacturaPorId(idFactura);
     }
 
-    public List<FacturaRectificada> obtenerHistoricoFactura(Long idFactura) {
+    public List<FacturaRectificada> obtenerHistoricoFactura(Integer idFactura) {
         Factura facturaOriginal = obtenerFacturaOriginalParaHistorico(idFactura);
         if (facturaOriginal == null) {
             return new ArrayList<>();
@@ -251,13 +251,7 @@ public class FacturaService {
             totalFactura = totalFactura.add(total);
         }
 
-        Factura facturaAnterior = facturaRepository.findUltimaFacturaAnterior(empresa.getId_empresa(), factura.getIdFactura());
-        String hashAnterior = facturaAnterior != null ? facturaAnterior.getHashVerifactu() : null;
-        factura.setHashVerifactu(verifactuHashService.generarHashFactura(
-                factura,
-                totalFactura.setScale(2, RoundingMode.HALF_UP),
-                hashAnterior
-        ));
+        factura.setHashVerifactu(construirHashVerifactu(factura));
         factura = facturaRepository.save(factura);
 
         if (facturaOriginal != null) {
@@ -268,5 +262,10 @@ public class FacturaService {
             relacion.setFecha(LocalDateTime.now());
             facturaRectificadaRepository.save(relacion);
         }
+    }
+
+    private String construirHashVerifactu(Factura factura) {
+        return "VF-" + certificadoEmpresaService.obtenerIdentificadorCertificado(factura.getEmpresa())
+                + "-" + factura.getIdFactura();
     }
 }

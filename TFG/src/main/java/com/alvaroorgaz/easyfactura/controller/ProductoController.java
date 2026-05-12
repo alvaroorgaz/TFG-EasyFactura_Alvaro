@@ -65,7 +65,7 @@ public class ProductoController {
     @PreAuthorize("hasAnyRole('ADMIN','EMPRESA')")
     public String guardarProducto(@Valid @ModelAttribute Producto producto,
                                   BindingResult bindingResult,
-                                  @RequestParam(required = false) Long empresaId,
+                                  @RequestParam(required = false) Integer empresaId,
                                   Authentication authentication,
                                   Model model,
                                   RedirectAttributes redirectAttributes) {
@@ -126,7 +126,7 @@ public class ProductoController {
 
     @GetMapping("/editar/{id}")
     @PreAuthorize("hasRole('ADMIN') or @authService.esPropietarioProducto(#id)")
-    public String editarProductoForm(@PathVariable Long id,
+    public String editarProductoForm(@PathVariable Integer id,
                                      Authentication authentication,
                                      Model model,
                                      RedirectAttributes redirectAttributes) {
@@ -157,7 +157,7 @@ public class ProductoController {
 
     @GetMapping("/eliminar/{id}")
     @PreAuthorize("hasRole('ADMIN') or @authService.esPropietarioProducto(#id)")
-    public String eliminarProducto(@PathVariable Long id,
+    public String eliminarProducto(@PathVariable Integer id,
                                    Authentication authentication,
                                    RedirectAttributes redirectAttributes) {
         Producto producto = productoService.obtenerProductoPorId(id);

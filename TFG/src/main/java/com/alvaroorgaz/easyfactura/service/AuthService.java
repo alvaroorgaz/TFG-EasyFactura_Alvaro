@@ -51,12 +51,12 @@ public class AuthService {
         return empresa != null ? empresa.getEmail() : null;
     }
 
-    public boolean esMismaEmpresa(Long empresaId) {
+    public boolean esMismaEmpresa(Integer empresaId) {
         Empresa empresa = getEmpresaLogin();
         return empresa != null && empresaId != null && empresaId.equals(empresa.getId_empresa());
     }
 
-    public boolean esPropietarioCliente(Long id) {
+    public boolean esPropietarioCliente(Integer id) {
         Empresa empresa = getEmpresaLogin();
         if (empresa == null || id == null) {
             return false;
@@ -67,7 +67,7 @@ public class AuthService {
                 .orElse(false);
     }
 
-    public boolean esPropietarioProducto(Long id) {
+    public boolean esPropietarioProducto(Integer id) {
         Empresa empresa = getEmpresaLogin();
         if (empresa == null || id == null) {
             return false;
@@ -78,7 +78,7 @@ public class AuthService {
                 .orElse(false);
     }
 
-    public boolean esPropietarioFactura(Long id) {
+    public boolean esPropietarioFactura(Integer id) {
         Empresa empresa = getEmpresaLogin();
         if (empresa == null || id == null) {
             return false;
@@ -89,7 +89,7 @@ public class AuthService {
                 .orElse(false);
     }
 
-    public boolean esAdminPorId(Long id) {
+    public boolean esAdminPorId(Integer id) {
         return empresaRepository.findById(id)
                 .map(Empresa::getRol)
                 .map(rol -> rol == Rol.ADMIN)

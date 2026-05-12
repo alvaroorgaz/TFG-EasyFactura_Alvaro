@@ -7,11 +7,11 @@ import org.springframework.data.repository.query.Param;
 
 import java.util.List;
 
-public interface FacturaRepository extends JpaRepository<Factura, Long> {
+public interface FacturaRepository extends JpaRepository<Factura, Integer> {
 
-    @Query("SELECT f FROM Factura f WHERE f.empresa.id_empresa = :idEmpresa")
-    List<Factura> findFacturasByEmpresaId(@Param("idEmpresa") Long idEmpresa);
+    @Query("SELECT f FROM Factura f WHERE f.empresa.idEmpresa = :idEmpresa")
+    List<Factura> findFacturasByEmpresaId(@Param("idEmpresa") Integer idEmpresa);
 
     @Query(value = "SELECT * FROM factura WHERE id_empresa = :idEmpresa AND id_factura < :idFactura ORDER BY id_factura DESC LIMIT 1", nativeQuery = true)
-    Factura findUltimaFacturaAnterior(@Param("idEmpresa") Long idEmpresa, @Param("idFactura") Long idFactura);
+    Factura findUltimaFacturaAnterior(@Param("idEmpresa") Integer idEmpresa, @Param("idFactura") Integer idFactura);
 }

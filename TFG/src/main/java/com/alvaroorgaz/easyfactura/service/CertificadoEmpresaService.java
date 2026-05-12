@@ -100,6 +100,10 @@ public class CertificadoEmpresaService {
         return normalizarCif(cif);
     }
 
+    public String obtenerIdentificadorCertificado(Empresa empresa) {
+        return obtenerAlias(empresa.getCif());
+    }
+
     public char[] obtenerPasswordCertificado(String cif) {
         try {
             String base = masterSecret + ":" + normalizarCif(cif);

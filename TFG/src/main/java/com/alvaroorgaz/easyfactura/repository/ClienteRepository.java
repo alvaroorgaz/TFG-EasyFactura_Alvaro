@@ -7,7 +7,7 @@ import org.springframework.data.repository.query.Param;
 
 import java.util.List;
 
-public interface ClienteRepository extends JpaRepository<Cliente, Long> {
-    @Query("SELECT c FROM Cliente c WHERE c.empresa.id_empresa = :idEmpresa")
-    List<Cliente> findClientesByEmpresaId(@Param("idEmpresa") Long idEmpresa);
+public interface ClienteRepository extends JpaRepository<Cliente, Integer> {
+    @Query("SELECT c FROM Cliente c WHERE c.empresa.idEmpresa = :idEmpresa")
+    List<Cliente> findClientesByEmpresaId(@Param("idEmpresa") Integer idEmpresa);
 }

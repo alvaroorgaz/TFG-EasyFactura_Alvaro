@@ -15,7 +15,7 @@ public class Empresa {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id_empresa")
-    private Long idEmpresa;
+    private Integer idEmpresa;
 
     @NotBlank(message = "El nombre es obligatorio.")
     @Size(max = 50, message = "El nombre no puede superar los 50 caracteres.")
@@ -53,19 +53,19 @@ public class Empresa {
     @Enumerated(EnumType.STRING)
     private Rol rol;
 
-    public Long getId_empresa() {
+    public Integer getId_empresa() {
         return idEmpresa;
     }
 
-    public void setId_empresa(Long idEmpresa) {
+    public void setId_empresa(Integer idEmpresa) {
         this.idEmpresa = idEmpresa;
     }
 
-    public Long getIdEmpresa() {
+    public Integer getIdEmpresa() {
         return idEmpresa;
     }
 
-    public void setIdEmpresa(Long idEmpresa) {
+    public void setIdEmpresa(Integer idEmpresa) {
         this.idEmpresa = idEmpresa;
     }
 

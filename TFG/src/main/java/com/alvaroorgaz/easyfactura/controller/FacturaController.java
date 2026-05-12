@@ -12,6 +12,7 @@ import com.alvaroorgaz.easyfactura.service.ClienteService;
 import com.alvaroorgaz.easyfactura.service.EmpresaService;
 import com.alvaroorgaz.easyfactura.service.FacturaPdfService;
 import com.alvaroorgaz.easyfactura.service.FirmaPdfService;
+import com.alvaroorgaz.easyfactura.service.FacturaEmailService;
 import com.alvaroorgaz.easyfactura.service.FacturaService;
 import com.alvaroorgaz.easyfactura.service.ProductoService;
 import jakarta.validation.Valid;
@@ -43,6 +44,7 @@ public class FacturaController {
     private final FacturaService facturaService;
     private final FacturaPdfService facturaPdfService;
     private final FirmaPdfService firmaPdfService;
+    private final FacturaEmailService facturaEmailService;
     private final AuthService authService;
     private final EmpresaService empresaService;
     private final ClienteService clienteService;
@@ -51,6 +53,7 @@ public class FacturaController {
     public FacturaController(FacturaService facturaService,
                              FacturaPdfService facturaPdfService,
                              FirmaPdfService firmaPdfService,
+                             FacturaEmailService facturaEmailService,
                              AuthService authService,
                              EmpresaService empresaService,
                              ClienteService clienteService,
@@ -58,6 +61,7 @@ public class FacturaController {
         this.facturaService = facturaService;
         this.facturaPdfService = facturaPdfService;
         this.firmaPdfService = firmaPdfService;
+        this.facturaEmailService = facturaEmailService;
         this.authService = authService;
         this.empresaService = empresaService;
         this.clienteService = clienteService;
@@ -71,7 +75,7 @@ public class FacturaController {
         boolean esAdmin = authService.isAdmin();
 
         List<Factura> facturas = facturaService.obtenerFacturas(esAdmin, empresaLogueada);
-        Map<Long, BigDecimal> totalesFacturas = new HashMap<>();
+        Map<Integer, BigDecimal> totalesFacturas = new HashMap<>();
 
         for (Factura factura : facturas) {
             totalesFacturas.put(factura.getIdFactura(), facturaService.calcularTotalFactura(factura.getIdFactura()));
@@ -129,7 +133,7 @@ public class FacturaController {
 
     @GetMapping("/rectificar/{id}")
     @PreAuthorize("hasRole('ADMIN') or @authService.esPropietarioFactura(#id)")
-    public String rectificarFacturaForm(@PathVariable Long id,
+    public String rectificarFacturaForm(@PathVariable Integer id,
                                         Authentication authentication,
                                         Model model,
                                         RedirectAttributes redirectAttributes) {
@@ -159,7 +163,7 @@ public class FacturaController {
 
     @GetMapping("/historico/{id}")
     @PreAuthorize("hasRole('ADMIN') or @authService.esPropietarioFactura(#id)")
-    public String verHistoricoFactura(@PathVariable Long id,
+    public String verHistoricoFactura(@PathVariable Integer id,
                                       Authentication authentication,
                                       Model model,
                                       RedirectAttributes redirectAttributes) {
@@ -190,7 +194,7 @@ public class FacturaController {
 
     @GetMapping("/pdf/{id}")
     @PreAuthorize("hasRole('ADMIN') or @authService.esPropietarioFactura(#id)")
-    public ResponseEntity<byte[]> descargarPdfFactura(@PathVariable Long id,
+    public ResponseEntity<byte[]> descargarPdfFactura(@PathVariable Integer id,
                                                       Authentication authentication) {
         Factura factura = facturaService.obtenerFacturaPorId(id);
 
@@ -219,6 +223,35 @@ public class FacturaController {
         return ResponseEntity.ok()
                 .headers(headers)
                 .body(pdfFirmado);
+    }
+
+    @PostMapping("/email/{id}")
+    @PreAuthorize("hasRole('ADMIN') or @authService.esPropietarioFactura(#id)")
+    public String enviarFacturaPorEmail(@PathVariable Integer id,
+                                        RedirectAttributes redirectAttributes) {
+        Factura factura = facturaService.obtenerFacturaPorId(id);
+
+        if (factura == null) {
+            redirectAttributes.addFlashAttribute("error", "Factura no encontrada.");
+            return "redirect:/factura";
+        }
+
+        try {
+            List<com.alvaroorgaz.easyfactura.model.FacturaDetalle> detalles = facturaService.obtenerDetallesPorFactura(id);
+            ResumenFactura resumenFactura = facturaService.calcularResumenFactura(id);
+            byte[] pdf = facturaPdfService.generarPdf(factura, detalles, resumenFactura);
+            byte[] pdfFirmado = firmaPdfService.firmarPdf(pdf, factura.getEmpresa());
+
+            facturaEmailService.enviarFacturaFirmada(factura, pdfFirmado);
+            redirectAttributes.addFlashAttribute(
+                    "success",
+                    "Factura enviada por email a " + factura.getEmpresa().getEmail() + " y " + factura.getCliente().getEmail() + "."
+            );
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("error", "No se pudo enviar la factura: " + e.getMessage());
+        }
+
+        return "redirect:/factura";
     }
 
     private void cargarDatosFormulario(Model model,

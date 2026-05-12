@@ -14,15 +14,15 @@ class TfgApplicationTests {
 	@Test
 	void generaHashDeterministaParaLaMismaFactura() {
 		Empresa empresa = new Empresa();
-		empresa.setIdEmpresa(1L);
+		empresa.setIdEmpresa(1);
 		empresa.setCif("B12345678");
 
 		Cliente cliente = new Cliente();
-		cliente.setIdCliente(1L);
+		cliente.setIdCliente(1);
 		cliente.setNif("12345678A");
 
 		Factura factura = new Factura();
-		factura.setIdFactura(5L);
+		factura.setIdFactura(5);
 		factura.setEmpresa(empresa);
 		factura.setCliente(cliente);
 		factura.setEstado(EstadoFactura.activa);

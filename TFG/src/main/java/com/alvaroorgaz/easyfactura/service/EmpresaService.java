@@ -57,7 +57,7 @@ public class EmpresaService {
         return empresaRepository.findAll();
     }
 
-    public Empresa obtenerEmpresaPorId(Long id) {
+    public Empresa obtenerEmpresaPorId(Integer id) {
         return empresaRepository.findById(id).orElse(null);
     }
 
@@ -65,7 +65,7 @@ public class EmpresaService {
         return empresaRepository.findByEmail(email).orElse(null);
     }
 
-    public void eliminarEmpresa(Long id) {
+    public void eliminarEmpresa(Integer id) {
         empresaRepository.deleteById(id);
     }
 }

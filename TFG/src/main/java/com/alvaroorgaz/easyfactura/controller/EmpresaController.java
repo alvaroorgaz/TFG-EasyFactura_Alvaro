@@ -71,12 +71,12 @@ public class EmpresaController {
         }
     }
     @GetMapping("/editar/{id}")
-    public String editarEmpresaForm(@PathVariable Long id, Model model) {
+    public String editarEmpresaForm(@PathVariable Integer id, Model model) {
         model.addAttribute("empresa", empresaService.obtenerEmpresaPorId(id));
         return "empresa/crear";
     }
     @GetMapping("/eliminar/{id}")
-    public String eliminarEmpresa(@PathVariable Long id, RedirectAttributes redirectAttributes) {
+    public String eliminarEmpresa(@PathVariable Integer id, RedirectAttributes redirectAttributes) {
         if (authService.esMismaEmpresa(id)) {
             redirectAttributes.addFlashAttribute("error", "No puedes eliminar tu propio usuario administrador.");
             return "redirect:/empresa";

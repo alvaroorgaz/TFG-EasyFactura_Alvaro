@@ -33,7 +33,8 @@ public class AdminInitializer implements CommandLineRunner {
 
     @Override
     public void run(String... args) {
-        if (empresaRepository.findByEmail(adminEmail).isPresent()) {
+        if (empresaRepository.findByEmail(adminEmail).isPresent()
+                || empresaRepository.findByCif(adminCif).isPresent()) {
             return;
         }
 

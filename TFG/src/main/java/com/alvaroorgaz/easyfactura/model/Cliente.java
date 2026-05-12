@@ -13,7 +13,7 @@ public class Cliente {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id_cliente")
-    private Long idCliente;
+    private Integer idCliente;
 
     @ManyToOne
     @JoinColumn(name = "id_empresa", nullable = false)
@@ -41,11 +41,11 @@ public class Cliente {
     @Column(length = 20)
     private String telefono;
 
-    public Long getIdCliente() {
+    public Integer getIdCliente() {
         return idCliente;
     }
 
-    public void setIdCliente(Long idCliente) {
+    public void setIdCliente(Integer idCliente) {
         this.idCliente = idCliente;
     }
 

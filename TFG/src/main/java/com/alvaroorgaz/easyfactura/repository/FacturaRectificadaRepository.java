@@ -7,11 +7,11 @@ import org.springframework.data.repository.query.Param;
 
 import java.util.List;
 
-public interface FacturaRectificadaRepository extends JpaRepository<FacturaRectificada, Long> {
+public interface FacturaRectificadaRepository extends JpaRepository<FacturaRectificada, Integer> {
 
     @Query("SELECT fr FROM FacturaRectificada fr WHERE fr.facturaOriginal.idFactura = :idFactura ORDER BY fr.fecha ASC")
-    List<FacturaRectificada> findByFacturaOriginalId(@Param("idFactura") Long idFactura);
+    List<FacturaRectificada> findByFacturaOriginalId(@Param("idFactura") Integer idFactura);
 
     @Query("SELECT fr FROM FacturaRectificada fr WHERE fr.facturaRectificada.idFactura = :idFactura")
-    FacturaRectificada findByFacturaRectificadaId(@Param("idFactura") Long idFactura);
+    FacturaRectificada findByFacturaRectificadaId(@Param("idFactura") Integer idFactura);
 }

@@ -44,9 +44,23 @@ La aplicacion utiliza estas propiedades:
 - `spring.datasource.username=${DB_USER}`
 - `spring.datasource.password=${DB_PASSWORD}`
 - `app.certificados.directorio=certificados`
-- `app.certificados.master-secret=EasyFacturaSecret2026`
+- `app.certificados.master-secret=${CERT_MASTER_SECRET}`
 
 La carpeta `certificados/` se genera en local y almacena los certificados `.p12` de las empresas. No se sube al repositorio.
+
+### Configuracion de email con Brevo
+
+El envio de facturas por email esta preparado para usar Brevo como relay SMTP. Configura estas variables de entorno:
+
+- `MAIL_HOST=smtp-relay.brevo.com`
+- `MAIL_PORT=587`
+- `MAIL_USERNAME=<usuario SMTP de Brevo>`
+- `MAIL_PASSWORD=<password SMTP de Brevo>`
+- `MAIL_SMTP_AUTH=true`
+- `MAIL_SMTP_STARTTLS=true`
+- `MAIL_FROM=<correo remitente verificado en Brevo>`
+
+La aplicacion usa `MAIL_FROM` como remitente real del mensaje y deja el email de la empresa emisora como `reply-to`, lo que encaja mejor con el funcionamiento de Brevo.
 
 ## Despliegue y ejecucion
 
