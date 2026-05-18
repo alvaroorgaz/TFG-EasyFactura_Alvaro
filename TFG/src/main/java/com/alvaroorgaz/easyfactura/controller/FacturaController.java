@@ -16,6 +16,8 @@ import com.alvaroorgaz.easyfactura.service.FacturaEmailService;
 import com.alvaroorgaz.easyfactura.service.FacturaService;
 import com.alvaroorgaz.easyfactura.service.ProductoService;
 import jakarta.validation.Valid;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.ContentDisposition;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -40,6 +42,8 @@ import java.util.Map;
 @Controller
 @RequestMapping("/factura")
 public class FacturaController {
+
+    private static final Logger log = LoggerFactory.getLogger(FacturaController.class);
 
     private final FacturaService facturaService;
     private final FacturaPdfService facturaPdfService;
@@ -248,6 +252,7 @@ public class FacturaController {
                     "Factura enviada por email a " + factura.getEmpresa().getEmail() + " y " + factura.getCliente().getEmail() + "."
             );
         } catch (Exception e) {
+            log.error("Fallo al enviar la factura {} por email.", id, e);
             redirectAttributes.addFlashAttribute("error", "No se pudo enviar la factura: " + e.getMessage());
         }
 

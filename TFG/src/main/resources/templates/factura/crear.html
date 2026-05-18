@@ -59,11 +59,6 @@
             <input type="hidden" th:field="*{estado}">
         </div>
 
-        <div class="mb-3">
-            <label class="form-label">Hash VeriFactu</label>
-            <input type="text" class="form-control" th:field="*{hashVerifactu}" maxlength="150">
-        </div>
-
         <div class="mb-3" th:if="${esRectificacion}">
             <label class="form-label">Motivo de rectificacion</label>
             <textarea class="form-control" th:field="*{motivoRectificacion}" rows="3" required></textarea>

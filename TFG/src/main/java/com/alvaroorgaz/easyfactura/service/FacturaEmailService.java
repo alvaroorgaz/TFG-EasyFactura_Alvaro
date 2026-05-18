@@ -3,6 +3,8 @@ package com.alvaroorgaz.easyfactura.service;
 import com.alvaroorgaz.easyfactura.model.Factura;
 import jakarta.mail.internet.InternetAddress;
 import jakarta.mail.internet.MimeMessage;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.mail.javamail.JavaMailSender;
@@ -14,6 +16,8 @@ import java.util.Set;
 
 @Service
 public class FacturaEmailService {
+
+    private static final Logger log = LoggerFactory.getLogger(FacturaEmailService.class);
 
     private final JavaMailSender javaMailSender;
 
@@ -56,7 +60,9 @@ public class FacturaEmailService {
 
             javaMailSender.send(mimeMessage);
         } catch (Exception e) {
-            throw new RuntimeException("No se pudo enviar la factura por email.", e);
+            String detalle = obtenerDetalleError(e);
+            log.error("Error al enviar la factura {} por email: {}", factura.getIdFactura(), detalle, e);
+            throw new RuntimeException("No se pudo enviar la factura por email. Detalle: " + detalle, e);
         }
     }
 
@@ -97,5 +103,19 @@ public class FacturaEmailService {
                 factura.getEmpresa().getNombre(),
                 factura.getCliente().getNombre()
         );
+    }
+
+    private String obtenerDetalleError(Throwable throwable) {
+        Throwable actual = throwable;
+        while (actual.getCause() != null) {
+            actual = actual.getCause();
+        }
+
+        String mensaje = actual.getMessage();
+        if (mensaje == null || mensaje.isBlank()) {
+            return actual.getClass().getSimpleName();
+        }
+
+        return mensaje;
     }
 }
