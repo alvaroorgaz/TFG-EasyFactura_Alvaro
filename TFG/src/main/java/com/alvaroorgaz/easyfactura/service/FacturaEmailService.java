@@ -1,38 +1,59 @@
 package com.alvaroorgaz.easyfactura.service;
 
 import com.alvaroorgaz.easyfactura.model.Factura;
-import jakarta.mail.internet.InternetAddress;
-import jakarta.mail.internet.MimeMessage;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.core.io.ByteArrayResource;
-import org.springframework.mail.javamail.JavaMailSender;
-import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
 
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.nio.charset.StandardCharsets;
+import java.time.Duration;
+import java.util.ArrayList;
+import java.util.Base64;
 import java.util.LinkedHashSet;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.Set;
+import java.util.regex.Pattern;
 
 @Service
 public class FacturaEmailService {
 
     private static final Logger log = LoggerFactory.getLogger(FacturaEmailService.class);
+    private static final Pattern EMAIL_PATTERN = Pattern.compile("^[A-Z0-9._%+-]+@[A-Z0-9.-]+\\.[A-Z]{2,}$", Pattern.CASE_INSENSITIVE);
 
-    private final JavaMailSender javaMailSender;
+    private final ObjectMapper objectMapper;
+    private final HttpClient httpClient;
 
     @Value("${app.mail.from}")
     private String from;
 
-    public FacturaEmailService(JavaMailSender javaMailSender) {
-        this.javaMailSender = javaMailSender;
+    @Value("${app.mail.from-name:EasyFactura}")
+    private String fromName;
+
+    @Value("${app.brevo.api-key:}")
+    private String brevoApiKey;
+
+    @Value("${app.brevo.api-url:https://api.brevo.com/v3/smtp/email}")
+    private String brevoApiUrl;
+
+    public FacturaEmailService(ObjectMapper objectMapper) {
+        this.objectMapper = objectMapper;
+        this.httpClient = HttpClient.newBuilder()
+                .connectTimeout(Duration.ofSeconds(10))
+                .build();
     }
 
     public void enviarFacturaFirmada(Factura factura, byte[] pdfFirmado) {
         try {
-            if (from == null || from.isBlank()) {
-                throw new RuntimeException("Debes configurar MAIL_FROM con un remitente verificado en Brevo.");
-            }
+            validarConfiguracion();
 
             Set<String> destinatarios = new LinkedHashSet<>();
             agregarDestinatario(destinatarios, factura.getEmpresa().getEmail());
@@ -42,28 +63,70 @@ public class FacturaEmailService {
                 throw new RuntimeException("La factura no tiene destinatarios de correo validos.");
             }
 
-            MimeMessage mimeMessage = javaMailSender.createMimeMessage();
-            MimeMessageHelper helper = new MimeMessageHelper(mimeMessage, true, "UTF-8");
+            String payload = objectMapper.writeValueAsString(construirPayload(factura, destinatarios, pdfFirmado));
 
-            helper.setFrom(from);
-            if (factura.getEmpresa().getEmail() != null && !factura.getEmpresa().getEmail().isBlank()) {
-                helper.setReplyTo(factura.getEmpresa().getEmail().trim());
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(URI.create(brevoApiUrl))
+                    .timeout(Duration.ofSeconds(20))
+                    .header("accept", "application/json")
+                    .header("content-type", "application/json")
+                    .header("api-key", brevoApiKey)
+                    .POST(HttpRequest.BodyPublishers.ofString(payload, StandardCharsets.UTF_8))
+                    .build();
+
+            HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8));
+
+            if (response.statusCode() < 200 || response.statusCode() >= 300) {
+                String detalle = extraerDetalleBrevo(response.body());
+                log.error("Brevo respondio {} al enviar la factura {}. Cuerpo: {}", response.statusCode(), factura.getIdFactura(), response.body());
+                throw new RuntimeException("Brevo devolvio " + response.statusCode() + ". " + detalle);
             }
-            helper.setTo(destinatarios.toArray(String[]::new));
-            helper.setSubject("Factura " + factura.getIdFactura() + " - " + factura.getEmpresa().getNombre());
-            helper.setText(construirCuerpoTexto(factura), construirCuerpoHtml(factura));
-            helper.addAttachment(
-                    "factura-" + factura.getIdFactura() + ".pdf",
-                    new ByteArrayResource(pdfFirmado),
-                    "application/pdf"
-            );
-
-            javaMailSender.send(mimeMessage);
         } catch (Exception e) {
             String detalle = obtenerDetalleError(e);
-            log.error("Error al enviar la factura {} por email: {}", factura.getIdFactura(), detalle, e);
+            log.error("Error al enviar la factura {} por la API de Brevo: {}", factura.getIdFactura(), detalle, e);
             throw new RuntimeException("No se pudo enviar la factura por email. Detalle: " + detalle, e);
         }
+    }
+
+    private void validarConfiguracion() {
+        if (from == null || from.isBlank()) {
+            throw new RuntimeException("Debes configurar MAIL_FROM con un remitente verificado en Brevo.");
+        }
+
+        if (brevoApiKey == null || brevoApiKey.isBlank()) {
+            throw new RuntimeException("Debes configurar BREVO_API_KEY en Render.");
+        }
+    }
+
+    private Map<String, Object> construirPayload(Factura factura, Set<String> destinatarios, byte[] pdfFirmado) {
+        Map<String, Object> payload = new LinkedHashMap<>();
+        payload.put("sender", Map.of("name", valorSeguro(fromName, factura.getEmpresa().getNombre()), "email", from));
+        payload.put("to", construirDestinatarios(destinatarios));
+        payload.put("subject", "Factura " + factura.getIdFactura() + " - " + factura.getEmpresa().getNombre());
+        payload.put("textContent", construirCuerpoTexto(factura));
+        payload.put("htmlContent", construirCuerpoHtml(factura));
+
+        if (factura.getEmpresa().getEmail() != null && !factura.getEmpresa().getEmail().isBlank()) {
+            payload.put("replyTo", Map.of(
+                    "email", factura.getEmpresa().getEmail().trim(),
+                    "name", factura.getEmpresa().getNombre()
+            ));
+        }
+
+        payload.put("attachment", List.of(Map.of(
+                "name", "factura-" + factura.getIdFactura() + ".pdf",
+                "content", Base64.getEncoder().encodeToString(pdfFirmado)
+        )));
+
+        return payload;
+    }
+
+    private List<Map<String, String>> construirDestinatarios(Set<String> destinatarios) {
+        List<Map<String, String>> to = new ArrayList<>();
+        for (String email : destinatarios) {
+            to.add(Map.of("email", email));
+        }
+        return to;
     }
 
     private void agregarDestinatario(Set<String> destinatarios, String email) {
@@ -71,11 +134,9 @@ public class FacturaEmailService {
             return;
         }
 
-        try {
-            InternetAddress address = new InternetAddress(email.trim());
-            address.validate();
-            destinatarios.add(address.getAddress());
-        } catch (Exception ignored) {
+        String emailNormalizado = email.trim();
+        if (EMAIL_PATTERN.matcher(emailNormalizado).matches()) {
+            destinatarios.add(emailNormalizado);
         }
     }
 
@@ -105,6 +166,28 @@ public class FacturaEmailService {
         );
     }
 
+    private String extraerDetalleBrevo(String body) {
+        if (body == null || body.isBlank()) {
+            return "Respuesta vacia de la API de Brevo.";
+        }
+
+        try {
+            Map<String, Object> respuesta = objectMapper.readValue(body, new TypeReference<>() {
+            });
+
+            if (respuesta.containsKey("message")) {
+                return String.valueOf(respuesta.get("message"));
+            }
+
+            if (respuesta.containsKey("code")) {
+                return String.valueOf(respuesta.get("code")) + ": " + respuesta.getOrDefault("message", body);
+            }
+        } catch (Exception ignored) {
+        }
+
+        return body;
+    }
+
     private String obtenerDetalleError(Throwable throwable) {
         Throwable actual = throwable;
         while (actual.getCause() != null) {
@@ -117,5 +200,12 @@ public class FacturaEmailService {
         }
 
         return mensaje;
+    }
+
+    private String valorSeguro(String valorPreferido, String valorAlternativo) {
+        if (valorPreferido != null && !valorPreferido.isBlank()) {
+            return valorPreferido;
+        }
+        return valorAlternativo;
     }
 }

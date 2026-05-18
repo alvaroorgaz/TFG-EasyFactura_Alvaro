@@ -50,17 +50,14 @@ La carpeta `certificados/` se genera en local y almacena los certificados `.p12`
 
 ### Configuracion de email con Brevo
 
-El envio de facturas por email esta preparado para usar Brevo como relay SMTP. Configura estas variables de entorno:
+El envio de facturas por email esta preparado para usar la API HTTP de Brevo, lo que evita las restricciones SMTP de plataformas como Render Free. Configura estas variables de entorno:
 
-- `MAIL_HOST=smtp-relay.brevo.com`
-- `MAIL_PORT=587`
-- `MAIL_USERNAME=<usuario SMTP de Brevo>`
-- `MAIL_PASSWORD=<password SMTP de Brevo>`
-- `MAIL_SMTP_AUTH=true`
-- `MAIL_SMTP_STARTTLS=true`
+- `BREVO_API_KEY=<api key v3 de Brevo>`
 - `MAIL_FROM=<correo remitente verificado en Brevo>`
+- `MAIL_FROM_NAME=<nombre del remitente, opcional>`
+- `BREVO_API_URL=https://api.brevo.com/v3/smtp/email`
 
-La aplicacion usa `MAIL_FROM` como remitente real del mensaje y deja el email de la empresa emisora como `reply-to`, lo que encaja mejor con el funcionamiento de Brevo.
+La aplicacion usa `MAIL_FROM` como remitente real del mensaje y deja el email de la empresa emisora como `reply-to`.
 
 ## Despliegue y ejecucion
 
