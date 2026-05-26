@@ -32,6 +32,11 @@ public class FacturaPdfService {
     private static final float PAGE_TOP = 780f;
     private static final float LINE_HEIGHT = 16f;
     private static final float TABLE_ROW_HEIGHT = 18f;
+    private final CertificadoEmpresaService certificadoEmpresaService;
+
+    public FacturaPdfService(CertificadoEmpresaService certificadoEmpresaService) {
+        this.certificadoEmpresaService = certificadoEmpresaService;
+    }
 
     public byte[] generarPdf(Factura factura,
                              List<FacturaDetalle> detalles,
@@ -115,6 +120,15 @@ public class FacturaPdfService {
                 y = escribirLinea(contentStream, fontRegular, 10, 360, y, "Base imponible: " + formatearImporte(resumenFactura.baseImponible()));
                 y = escribirLinea(contentStream, fontRegular, 10, 360, y, "Total IVA: " + formatearImporte(resumenFactura.totalIva()));
                 y = escribirLinea(contentStream, fontBold, 11, 360, y, "Total factura: " + formatearImporte(resumenFactura.totalFactura()));
+
+                if (y < 150) {
+                    pageState = nuevaPagina(document, pageState);
+                    contentStream = pageState.contentStream;
+                    y = pageState.y;
+                }
+
+                y -= 18;
+                y = dibujarBloqueFirmaVisible(contentStream, fontRegular, fontBold, y, factura);
             } finally {
                 pageState.contentStream.close();
             }
@@ -158,6 +172,34 @@ public class FacturaPdfService {
         escribirTexto(contentStream, font, 9, 385, y, "IVA");
         escribirTexto(contentStream, font, 9, 445, y, "Base");
         escribirTexto(contentStream, font, 9, 515, y, "Total");
+    }
+
+    private float dibujarBloqueFirmaVisible(PDPageContentStream contentStream,
+                                            PDFont fontRegular,
+                                            PDFont fontBold,
+                                            float y,
+                                            Factura factura) throws IOException {
+        float blockTop = y;
+        float blockLeft = MARGIN;
+        float blockWidth = 495f;
+        float blockHeight = 88f;
+
+        contentStream.addRect(blockLeft, blockTop - blockHeight, blockWidth, blockHeight);
+        contentStream.stroke();
+
+        float textY = blockTop - 16;
+        textY = escribirLinea(contentStream, fontBold, 11, blockLeft + 12, textY,
+                "Firma digital del documento");
+        textY = escribirLinea(contentStream, fontRegular, 10, blockLeft + 12, textY,
+                "Certificado VeriFactu asociado a la empresa emisora");
+        textY = escribirLinea(contentStream, fontRegular, 10, blockLeft + 12, textY,
+                "Empresa firmante: " + factura.getEmpresa().getNombre());
+        textY = escribirLinea(contentStream, fontRegular, 10, blockLeft + 12, textY,
+                "Identificador del certificado: " + certificadoEmpresaService.obtenerIdentificadorCertificado(factura.getEmpresa()));
+        escribirLinea(contentStream, fontRegular, 10, blockLeft + 12, textY,
+                "Hash VeriFactu: " + valorSeguro(factura.getHashVerifactu()));
+
+        return blockTop - blockHeight - 10;
     }
 
     private String recortar(String texto, int maximo) {
