@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+<nav th:fragment="main-navbar" class="navbar navbar-expand-lg sticky-top shadow-sm" style="background: linear-gradient(135deg, #0f172a, #1e293b);">
+    <div class="container-fluid px-4">
+        <a class="navbar-brand d-flex flex-column text-white fw-semibold me-4" th:href="@{/}">
+            <span class="fs-4 lh-1">EasyFactura</span>
+            <small class="text-white-50 fw-normal">Gestion profesional de facturacion</small>
+        </a>
+
+        <button class="navbar-toggler border-0 shadow-none" type="button" data-bs-toggle="collapse" data-bs-target="#mainNavbar">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+
+        <div class="collapse navbar-collapse" id="mainNavbar">
+            <ul class="navbar-nav ms-auto align-items-lg-center gap-lg-2">
+                <li class="nav-item" th:if="${esAdmin}">
+                    <a class="nav-link rounded-pill px-3 text-white"
+                       th:classappend="${#strings.startsWith(currentPath, '/empresa')} ? ' bg-white bg-opacity-10 fw-semibold' : ''"
+                       th:href="@{/empresa}">Empresas</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link rounded-pill px-3 text-white"
+                       th:classappend="${#strings.startsWith(currentPath, '/cliente')} ? ' bg-white bg-opacity-10 fw-semibold' : ''"
+                       th:href="@{/cliente}">Clientes</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link rounded-pill px-3 text-white"
+                       th:classappend="${#strings.startsWith(currentPath, '/producto')} ? ' bg-white bg-opacity-10 fw-semibold' : ''"
+                       th:href="@{/producto}">Productos</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link rounded-pill px-3 text-white"
+                       th:classappend="${#strings.startsWith(currentPath, '/factura')} ? ' bg-white bg-opacity-10 fw-semibold' : ''"
+                       th:href="@{/factura}">Facturas</a>
+                </li>
+                <li class="nav-item ms-lg-3">
+                    <span class="d-inline-flex align-items-center rounded-pill px-3 py-2 text-white-50 small"
+                          style="background-color: rgba(255,255,255,0.08);"
+                          th:text="${empresaLoginNombre != null ? empresaLoginNombre : 'Sesion iniciada'}"></span>
+                </li>
+                <li class="nav-item ms-lg-2">
+                    <form th:action="@{/logout}" method="post" class="d-inline">
+                        <button type="submit" class="btn btn-light btn-sm rounded-pill px-3">Cerrar sesion</button>
+                    </form>
+                </li>
+            </ul>
+        </div>
+    </div>
+</nav>
+</body>
+</html>
